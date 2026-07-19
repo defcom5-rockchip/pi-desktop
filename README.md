@@ -1,5 +1,7 @@
 # Pi Desktop
 
+**v1.0 "Vanilla Sky" — first alpha baked 2026-07-19.**
+
 **A clean, fast daily-driver desktop for the Orange Pi 5B — in development.**
 *by defcom5-rockchip · based on [Joshua-Riek's ubuntu-rockchip](https://github.com/Joshua-Riek/ubuntu-rockchip) · Ubuntu 24.04 LTS · sibling of [Pi Studio](https://github.com/defcom5-rockchip/pi-studio)*
 
