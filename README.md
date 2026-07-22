@@ -1,28 +1,39 @@
 # Pi Desktop
+### The Orange Pi 5B, as it should have shipped.
 
-**v1.0 "Vanilla Sky" — first alpha baked 2026-07-19.**
+A clean, fast, self-healing Linux desktop for the Orange Pi 5B (RK3588) — built by
+someone who bought the board expecting a real computer, and got tired of waiting for one.
 
-**A clean, fast daily-driver desktop for the Orange Pi 5B — in development.**
-*by defcom5-rockchip · based on [Joshua-Riek's ubuntu-rockchip](https://github.com/Joshua-Riek/ubuntu-rockchip) · Ubuntu 24.04 LTS · sibling of [Pi Studio](https://github.com/defcom5-rockchip/pi-studio)*
+## What it is
+- 🖥️ **4K@120 / high-refresh, flicker-free** — a custom-tuned kernel that does the VOP2/dclk work most images skip
+- 🎬 **Hardware video decode** — 4K in your browser and players on the RK3588's VPU, CPU barely awake
+- 🔵 **Bluetooth that fixes itself** — the AP6275P radio bug that's broken these boards for years, root-caused *and* auto-healed
+- 🎛️ **A curated desktop** — hardware-accelerated Chromium, VLC & mpv, LibreOffice, VSCodium. Nothing you didn't ask for
+- 🚫 **No snaps. No telemetry. No junk drawer.** De-snapped, de-Canonical'd
+- 🔒 **Upgrade-proof** — kernel, bootloader, and snap-free state held, so `apt upgrade` can't undo the work
 
-Pi Studio proved the Orange Pi 5B can be a real instrument. Pi Desktop makes it a real computer.
+## 🔵 Self-healing Bluetooth — the fix Rockchip-land never shipped
+The AP6275P WiFi/BT combo chip has broken Bluetooth on these boards for years:
+dead at boot with WiFi active, stuttering audio, a toggle that needed a full reboot
+to recover. Pi Desktop ships the root-caused fixes *and* a background service that
+**resurrects the adapter in ~10 seconds, automatically — no reboot.** Toggle it off
+and on, count to ten, it's back. The thing that demanded a reboot for nine years now
+heals itself while you're not looking. *(Fixes published upstream: see issue #1.)*
 
-## What it will be (v1.0, in progress)
+## Honest scope
+A niche distro, single maintainer, on the vendor 6.1 BSP kernel. It ships a
+**KNOWN-ISSUES** file on purpose — we'd rather tell you what's rough than let you find
+out. One excellent browser ships (HW-accelerated Chromium); a second browser or mail
+client is your choice, and we provide the guides (Widevine, etc.). Release notes say
+what a release *doesn't* fix, too.
 
-- **Throughput-tuned kernel** — 4K@120 flicker-free display (our VOP2 patches), desktop preemption,
-  hand-picked security backports. Same forge as Pi Studio, different tuning.
-- **Every fix we published, inherited:** the Bluetooth boot-race fix
-  ([#1](https://github.com/defcom5-rockchip/ubuntu-rockchip/issues/1)), the BT-audio/WiFi coexistence
-  tuning ([#2](https://github.com/defcom5-rockchip/ubuntu-rockchip/issues/2)), hardware-decode Chromium,
-  first-boot fixes.
-- **Curated, not crowded:** Chromium (HW video) + Vivaldi, VLC, LibreOffice, Betterbird, VSCodium
-  (telemetry-free, flicker-fix pre-applied), WiiM Play, btop + a temperature readout where an SBC
-  needs one. No snaps. No telemetry. No junk drawer.
-- **Local AI, next:** the same on-NPU intelligence as Pi Studio's Muse, aimed at the desktop.
+## Download
+**v1.0-beta** — [Releases](../../releases). Flash the `.img.xz` to microSD or eMMC,
+verify the SHA256, boot. First boot expands to fill the card.
 
-## Why
+## The family
+- **[Pi Studio](https://github.com/defcom5-rockchip/pi-studio)** — the audio-production sibling (Sonic Pi, Ardour, an offline NPU AI music copilot)
+- **Naked Network Pi** — the stripped, headless base both are built on *(coming)*
 
-The Orange Pi 5B's official images are years stale and its ecosystem support is thin. We maintain
-the board like it deserves — kernel to desktop, with every limitation documented honestly.
-
-**Status:** spec complete, first image in the works. Watch this repo.
+Built on [Joshua Riek's ubuntu-rockchip](https://github.com/Joshua-Riek/ubuntu-rockchip)
+· Ubuntu 24.04 LTS · GPL-3.0 · by defcom5-rockchip
