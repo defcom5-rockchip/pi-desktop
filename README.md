@@ -6,7 +6,8 @@ someone who bought the board expecting a real computer, and got tired of waiting
 
 ## What it is
 - 🖥️ **4K@120 / high-refresh, flicker-free** — a custom-tuned kernel that does the VOP2/dclk work most images skip
-- 🎬 **Hardware video decode** — 4K in your browser and players on the RK3588's VPU, CPU barely awake
+- 🎬 **Hardware video decode in media players** — mpv and VLC are wired to the RK3588's VPU via rkmpp.
+  ⚠️ **Browser video is software-decoded** — a GL-driver limitation on this SoC, not a setting. See [KNOWN-ISSUES](KNOWN-ISSUES.md#browser-video-is-software-decoded).
 - 🔵 **Bluetooth that fixes itself** — the AP6275P radio bug that's broken these boards for years, root-caused *and* auto-healed
 - 🎛️ **A curated desktop** — hardware-accelerated Chromium, VLC & mpv, LibreOffice, VSCodium, WiiM Play for the hi-fi. Nothing you didn't ask for
 - 🚫 **No snaps. No telemetry. No junk drawer.** De-snapped, de-Canonical'd
