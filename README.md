@@ -31,6 +31,11 @@ what a release *doesn't* fix, too.
 **v1.0-beta** — [Releases](../../releases). Flash the `.img.xz` to microSD or eMMC,
 verify the SHA256, boot. First boot expands to fill the card.
 
+**Installing to eMMC? Read [EMMC-INSTALL.md](EMMC-INSTALL.md) first.** Copying a root filesystem
+onto eMMC does *not* install a bootloader — you can end up running a new OS on years-old firmware,
+which causes crashes and reboots under load (and follows you across distros). The guide covers the
+correct install, how to wipe a factory-Android eMMC, and maskrom recovery.
+
 ## The family
 - **[Pi Studio](https://github.com/defcom5-rockchip/pi-studio)** — the audio-production sibling (Sonic Pi, Ardour, an offline NPU AI music copilot)
 - **Naked Network Pi** — the stripped, headless base both are built on *(coming)*
