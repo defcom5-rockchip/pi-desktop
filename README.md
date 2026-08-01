@@ -6,9 +6,13 @@ someone who bought the board expecting a real computer, and got tired of waiting
 
 ## What it is
 - 🖥️ **4K@120 / high-refresh, flicker-free** — a custom-tuned kernel that does the VOP2/dclk work most images skip
-- 🎬 **Hardware video decode in media players** — mpv and VLC are wired to the RK3588's VPU via rkmpp.
-  ⚠️ **Browser video is software-decoded** — a GL-driver limitation on this SoC, not a setting. See [KNOWN-ISSUES](KNOWN-ISSUES.md#browser-video-is-software-decoded).
+- 🎬 **Hardware video decode — including in the browser** — 4K60 YouTube runs on the RK3588's video
+  engine, not the CPU (~118% instead of 600%+). mpv and VLC are wired to the VPU via rkmpp too.
+  Decode runs on the **Panfrost** stack, so it costs no stability tradeoff. *(AV1 is software-only —
+  see [KNOWN-ISSUES](KNOWN-ISSUES.md#vid-2-av1-is-software-decoded-and-always-will-be-on-this-stack).)*
 - 🔵 **Bluetooth that fixes itself** — the AP6275P radio bug that's broken these boards for years, root-caused *and* auto-healed
+- 🔌 **Boots with your USB audio interface plugged in** — U-Boot probed USB before storage, so a
+  bus-powered interface could stall the board before it ever reached the kernel. Fixed in v1.0
 - 🎛️ **A curated desktop** — hardware-accelerated Chromium, VLC & mpv, LibreOffice, VSCodium, WiiM Play for the hi-fi. Nothing you didn't ask for
 - 🚫 **No snaps. No telemetry. No junk drawer.** De-snapped, de-Canonical'd
 - 🔒 **Upgrade-proof** — kernel, bootloader, and snap-free state held, so `apt upgrade` can't undo the work
@@ -29,7 +33,7 @@ client is your choice, and we provide the guides (Widevine, etc.). Release notes
 what a release *doesn't* fix, too.
 
 ## Download
-**v1.0-beta** — [Releases](../../releases). Flash the `.img.xz` to microSD or eMMC,
+**v1.0 — "Vanilla Sky"** — [Releases](../../releases). Flash the `.img.xz` to microSD or eMMC,
 verify the SHA256, boot. First boot expands to fill the card.
 
 **Installing to eMMC? Read [EMMC-INSTALL.md](EMMC-INSTALL.md) first.** Copying a root filesystem
