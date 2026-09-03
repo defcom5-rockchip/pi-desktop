@@ -3,69 +3,77 @@
 Pi Desktop is a niche distro with a single maintainer, running on the vendor 6.1 BSP kernel.
 This file exists on purpose. We'd rather tell you what's rough than let you find out.
 
-Current as of **v1.0 — "Vanilla Sky"**.
+Current as of **v2.0.1**.
 
 ---
 
-## VID-1: Chromium can flicker on window resize
+## VID-1: Chromium-family browsers flicker; Firefox doesn't — so Firefox is the default
 
-**Status:** open · **Severity:** cosmetic · **Affects:** Chromium 132, some setups (notably ultrawide)
+**Status:** root-caused, unfixable on this GPU stack · **Severity:** cosmetic · **Affects:** Chromium, Chrome (any window size)
 
-Dragging or resizing a Chromium window can produce brief flicker or tearing. It's a quirk of the
-newer GL path in Chromium 132 and it does not affect playback correctness or decode.
+We finally ran this to ground: modern Chromium renders through ANGLE (mandatory since ~M117),
+and ANGLE on this image's GPU stack (panfork/Mesa 23) flickers — typing carets, UI redraws,
+independent of resolution or refresh rate. No flag fixes it without breaking something else.
 
-**Workarounds, any of which is reliable:**
-- **Fullscreen (F11) is always clean** — this is the one to use for video.
-- **Vivaldi is unaffected** if you want a second browser for long sessions.
-- **Chromium 114** remains installable (`apt install chromium-browser`) and is less glitchy on this
-  path. It's an older engine, so treat it as a video appliance rather than your daily browser.
-
-If you see flicker at a *fixed* window size, or in fullscreen, that's a different problem — please
-open an issue with your monitor model and refresh rate.
+**What we did about it:** made Firefox the default — Gecko/WebRender doesn't use ANGLE, so it's
+flicker-free *and* hardware-decodes video. Chrome ships pre-flagged for its one job (DRM
+streaming at DRM's own 720p cap, where its flicker-fix flag costs nothing). Chromium stays
+available for those who want it, flicker and all. The real cure is the mainline GPU stack
+(Panthor + current Mesa) — see *Scope and horizon*.
 
 ---
 
-## VID-2: AV1 is software-decoded, and always will be on this stack
+## VID-2: AV1 is software-decoded in browsers
 
-**Status:** won't fix (upstream limitation) · **Severity:** performance
+**Status:** won't fix on this stack · **Severity:** performance
 
-The rkmpp V4L2 plugin implements **H.264, HEVC, VP8 and VP9**. There is no AV1 in it. No flag,
-setting, or browser version changes this — the hardware path simply doesn't carry the codec.
+The browser hardware paths (rkmpp V4L2 and our VA-API driver) carry H.264, VP8 and VP9 — no AV1.
+YouTube increasingly serves AV1; if a 4K video pins your CPU, check *Stats for nerds* for `av01`.
 
-YouTube increasingly serves AV1 by default. If a 4K video is pinning your CPU while another plays
-cool, AV1 is the likely reason. Check `Stats for nerds` — if the codec reads `av01`, you're on the
-software path.
-
-**Workaround:** a browser extension that forces H.264/VP9 (h264ify and similar) keeps more streams
-on the hardware decoder. AV1 support would have to come from Rockchip's media stack or from mainline.
+**Workaround:** an extension that blocks AV1 (enhanced-h264ify, tick only "Block AV1") keeps
+streams on the hardware decoder. The RK3588's AV1 block is real — the ffmpeg-rockchip stack can
+use it — but no browser path reaches it on this kernel.
 
 ---
 
-## BOOT-1: First boot is busy for two to three minutes
+## VID-3: HEVC and 10-bit content are not hardware-decoded (on purpose, for now)
 
-**Status:** open, fix queued for v1.0.1 · **Severity:** cosmetic
+**Status:** in active development ("Deep Ink") · **Severity:** performance
 
-On the very first boot, `tracker-miner-fs-3`, `packagekitd` and `unattended-upgrades` all start
-indexing at once. Video playback can stutter while they work, and the desktop feels heavier than it
-is. **Decode holds through it** — this is I/O pressure, not a graphics problem.
+Straight story: the community VA-API driver this image inherited *claimed* HEVC and 10-bit
+support, but had never actually decoded them correctly for anyone — HEVC produced a solid green
+frame at every bit depth; 10-bit VP9 produced corruption. Our v2.0 driver stops advertising what
+it can't deliver, so players and media servers route to their working fallbacks automatically:
+software decode locally (correct picture, more CPU), server-side transcode in Jellyfin-style
+setups (the rkmpp transcode path handles HEVC fine).
 
-**Workaround:** give it a few minutes. It does not recur on later boots. Throttling the indexer is
-queued for the next release.
+Progress is real and public: the 10-bit conversion fix is written and hardware-verified
+(the NV15→P010 work in the driver repo), and the missing HEVC bitstream assembler is scoped.
+They return to the menu one codec at a time, as each is verified on hardware.
 
 ---
 
-## BOOT-2: Two systemd units fail at boot (harmless)
+## VID-4: 10-bit video files can show a blue screen in mpv
 
-**Status:** open, fix queued for v1.0.1 · **Severity:** cosmetic
+**Status:** fix verified, ships in v2.0.2 · **Severity:** playback failure on 10-bit files
 
-`casper-md5check.service` and `oem-config.service` report failed in `systemctl --failed`. Both are
-leftovers from the Ubuntu live/OEM installer that have no job to do on an installed system. They
-affect nothing. Masking them is queued.
+The GPU stack advertises 16-bit texture support it can't actually render, so 10-bit frames
+uploaded by mpv 0.38 display as a solid blue field. (8-bit content — virtually all web video —
+is unaffected.)
 
-```sh
-# if the red text bothers you before then:
-sudo systemctl mask casper-md5check.service oem-config.service
-```
+**Workaround until 2.0.2:** play the file with the older engine, which converts internally:
+`/usr/bin/mpv <file>` — or add `--vf=format=yuv420p` to mpv 0.38. The 2.0.2 config does this
+automatically, only for 10-bit content.
+
+---
+
+## BOOT-1: First boot is busy for a couple of minutes
+
+**Status:** open · **Severity:** cosmetic
+
+First boot runs the one-time setup and indexing. One systemd unit (`oem-config`) reports
+"failed" on that first boot as it tears itself down — it's gone by the second boot, which comes
+up with **zero failed units**. Give it a few minutes once; it does not recur.
 
 ---
 
@@ -73,43 +81,46 @@ sudo systemctl mask casper-md5check.service oem-config.service
 
 **Status:** open, upstream (vendor driver) · **Severity:** rare but disruptive
 
-The vendor Mali kernel driver (`kbase`) has a use-after-free on GPU-context teardown that can crash
-the desktop session. Observed **once**, on a long-running machine under an ultrawide display, and it
-recovered on its own.
-
-Worth being straight about the scope: `kbase` is bound to the GPU on every RK3588 image, this one
-included, so the exposure exists regardless of what a browser is doing. Pi Desktop's browser video
-decode runs on the **Panfrost** stack rather than the vendor blob, so it does not add to this risk.
-The permanent fix is mainline's Panthor driver, which replaces `kbase` entirely.
+The vendor Mali kernel driver (`kbase`) has a use-after-free on GPU-context teardown that can
+crash the desktop session. Observed once, recovered on its own. Exposure exists on every RK3588
+image with this kernel; the permanent fix is mainline's Panthor driver.
 
 ---
 
 ## Scope and horizon
 
-Pi Desktop is built on the **vendor 6.1 BSP kernel**, because that is what does 4K@120 and hardware
-video on this SoC *today*. Mainline Linux is catching up — HDMI 2.0 support for the RK3588 is in
-active review, FRL PHY support has landed, and the Panthor GPU driver plus a current Mesa will
-eventually give a cleaner path than the one we're on. We intend to move when mainline carries
-VP9/AV1 and 4K@120. Until then, the fork is the reason the features work.
+Pi Desktop is built on the **vendor 6.1 BSP kernel**, because that is what does 4K@120 and
+hardware video on this SoC *today*. The mainline world is moving fast — RK3588 H.264/HEVC
+decoders are merged, 10-bit HDMI output is in review, and a community forward-port of the vendor
+media stack onto Linux 6.18 already exists. When that path matures for this board, VID-1, VID-4
+and GPU-1 all fall at once (Panthor + modern Mesa), and this file gets a lot shorter. Until
+then, the fork is the reason the features work.
 
 ---
 
-## Fixed in v1.0
+## Fixed in v2.0.1
 
-- **Browser video is now hardware-decoded.** Earlier documentation stated this was a permanent GL
-  driver limitation on this SoC. **That was wrong, and the explanation we published was wrong.** The
-  real cause was a packaging accident: upstream Mesa 25.x split its gallium drivers into a new binary
-  package that the panfork Mesa build doesn't publish, so a routine `apt upgrade` silently replaced
-  the panfork graphics stack with stock Mesa. That mismatch — not any hardware or driver limit — is
-  what broke decode. v1.0 pins the correct stack and a build gate fails the image if the wrong Mesa
-  ever ships again. Verified on a pristine, cold-booted image: `chrome://gpu` reports *Video Decode:
-  Hardware accelerated*, `mpp_service` is held by Chromium, `rkvdec` clocks up, and 4K60 VP9 runs at
-  ~118% CPU instead of 600%+.
-- **USB boot hang.** The board no longer hangs at boot with a bus-powered USB audio interface
-  attached. U-Boot probed the USB bus before storage; boot targets are now ordered storage-first.
+- **Odd-resolution VP9 green screen.** Academy-ratio and other non-standard-width VP9 videos
+  (e.g. 2970×2160 film-scan uploads) hardware-decoded to a solid green frame. Root cause: the
+  driver exported frames at a 16-aligned stride where the GPU importer expects 64. Fixed in our
+  driver fork (v2.0 "Reframe"), with a public reproducer.
+- **The driver's codec menu now tells the truth** (see VID-3) — no more green walls from codecs
+  that never worked; correct fallbacks instead.
+- **Firefox default, flicker-free, hardware-decoded** — with enterprise-policy prefs that survive
+  Firefox updates. Chrome scoped to DRM duty (Netflix verified). Vivaldi dropped (its Widevine
+  can't legally ship; Chrome bundles its own).
+- **mpv 0.38** — window drag-and-drop finally works on Wayland.
+- **Betterbird actually installed** — v1.0's mail default pointed at a package that never made it
+  into the image. Now real.
+- **Pro Updates ships in-image** and reports green out of the box (apt sources moved to https).
+- **A dormant second OS partition no longer appears in the Files sidebar.**
+- *(driver nerd note)* `vaDeriveImage` used to return an empty buffer, so every "copy-back"
+  video path silently produced black/zeros. It now fails honestly and clients use the working
+  path instead.
 
 ## Reporting
 
-Found something not listed here? [Open an issue](../../issues) — include your board revision, how you
-installed (SD / eMMC / NVMe), your monitor's resolution and refresh rate, and the output of
-`uname -a`. If it's video-related, a screenshot of `chrome://gpu` is worth a thousand words.
+Found something not listed here? [Open an issue](../../issues) — include your board revision, how
+you installed (SD / eMMC / NVMe), your monitor's resolution and refresh rate, and `uname -a`.
+If it's video-related, a screenshot of `about:support` (Firefox) or `chrome://gpu` is worth a
+thousand words.
