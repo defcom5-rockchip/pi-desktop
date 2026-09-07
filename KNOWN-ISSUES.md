@@ -36,34 +36,33 @@ use it — but no browser path reaches it on this kernel.
 
 ---
 
-## VID-3: HEVC and 10-bit content are not hardware-decoded (on purpose, for now)
+## VID-3: 10-bit video at 4K60 is not yet smooth in Firefox
 
-**Status:** in active development ("Deep Ink") · **Severity:** performance
+**Status:** open, next driver phase · **Severity:** performance (10-bit 4K60 only)
 
-Straight story: the community VA-API driver this image inherited *claimed* HEVC and 10-bit
-support, but had never actually decoded them correctly for anyone — HEVC produced a solid green
-frame at every bit depth; 10-bit VP9 produced corruption. Our v2.0 driver stops advertising what
-it can't deliver, so players and media servers route to their working fallbacks automatically:
-software decode locally (correct picture, more CPU), server-side transcode in Jellyfin-style
-setups (the rkmpp transcode path handles HEVC fine).
+As of 2.0.2, 10-bit HEVC and VP9 Profile 2 are hardware-decoded and displayed zero-copy in
+Firefox and mpv (see *Fixed in v2.0.2*). One cost remains: the driver still repacks every
+10-bit frame from the video engine's packed format to P010 on the CPU. That fits 4K at 30 fps
+(4K Main10 features play in hardware end to end) and 1080p at any rate; at 4K **60** it can
+stutter. Moving that step to the RGA hardware is measured at under 5 ms per 4K frame and is
+the next driver phase. 8-bit content is unaffected.
 
-Progress is real and public: the 10-bit conversion fix is written and hardware-verified
-(the NV15→P010 work in the driver repo), and the missing HEVC bitstream assembler is scoped.
-They return to the menu one codec at a time, as each is verified on hardware.
+Also expected, not a bug: HDR (PQ/BT.2020) files look pale in Firefox because Firefox on Linux
+does no HDR tone mapping, whichever decoder produced the pixels. mpv tone-maps them correctly.
 
 ---
 
-## VID-4: 10-bit video files can show a blue screen in mpv
+## VID-4: 10-bit files in the image's Chromium are transcoded, not hardware-decoded
 
-**Status:** fix verified, ships in v2.0.2 · **Severity:** playback failure on 10-bit files
+**Status:** by design for now · **Severity:** convenience (Jellyfin-style setups transcode 10-bit)
 
-The GPU stack advertises 16-bit texture support it can't actually render, so 10-bit frames
-uploaded by mpv 0.38 display as a solid blue field. (8-bit content — virtually all web video —
-is unaffected.)
-
-**Workaround until 2.0.2:** play the file with the older engine, which converts internally:
-`/usr/bin/mpv <file>` — or add `--vf=format=yuv420p` to mpv 0.38. The 2.0.2 config does this
-automatically, only for 10-bit content.
+The `+rkmpp` Chromium decodes through a V4L2 plug-in (libv4l-rkmpp), not through our VA-API
+driver, and that plug-in outputs 8-bit NV12 only. Before 2.0.2 it *advertised* 10-bit anyway
+and aborted Chromium's whole GPU process on the first 10-bit frame (a white/black flash). Our
+fork of the plug-in, shipped in 2.0.2, hides the 10-bit profiles and removes the abort:
+Chromium now reports 10-bit unsupported, so a media server transcodes it and 8-bit HEVC plays
+in hardware. Real 10-bit in Chromium needs the same RGA conversion as VID-3, inside the
+plug-in. **Firefox is the browser to use for 10-bit** — it direct-plays it in hardware.
 
 ---
 
@@ -97,6 +96,32 @@ and GPU-1 all fall at once (Panthor + modern Mesa), and this file gets a lot sho
 then, the fork is the reason the features work.
 
 ---
+
+## Fixed in v2.0.2
+
+- **HEVC is hardware-decoded — including in the browser.** The driver gained a real HEVC
+  bitstream assembler (v2.1.0), verified pixel-identical to software decode; Firefox ships
+  with HEVC enabled by policy. A 4K Main10 feature plays in hardware start to finish.
+- **10-bit works: HEVC Main10, H.264 High 10 and VP9 Profile 2 are advertised and display
+  zero-copy** in Firefox and mpv. The "GPU stack can't render 16-bit" story from 2.0.1 was
+  wrong: the driver exported the chroma plane with a mistyped format code ("GR16", which does
+  not exist). One byte (driver v2.1.3). Jellyfin's web client direct-plays 10-bit in Firefox
+  in hardware; measured, not assumed.
+- **H.264 ghosting with B-frames** (broadcast-style streams drifted after the first dozen
+  frames): the synthesized PPS hard-coded a reference-count default real encoders don't use.
+  Fixed in driver v2.1.2 by learning the value from the stream.
+- **Chromium no longer loses its GPU process on 10-bit files** (see VID-4) and now plays 8-bit
+  HEVC in hardware: our fork of the libv4l-rkmpp plug-in plus the HEVC flag.
+- **Chrome/Chromium with the VA-API decoder ran out of decode surfaces at 4K** (garbled, then
+  green). Pool raised, allocation failures now fail cleanly (driver v2.1.4).
+- **mpv defaults to zero-copy VA-API** (`hwdec=vaapi,vaapi-copy`); the 10-bit "guard" profile
+  from 2.0.1 is gone — it also fired on hardware-decoded 10-bit and quietly converted it to
+  8-bit on the CPU.
+- **Silent audio after a Bluetooth drop:** the board's unused analog codec (ES8388, silent on
+  this kernel) could become the default sink. It is now deprioritized in WirePlumber.
+- **Kernel: RGA driver 1.3.13** (from Rockchip's develop-6.1), the newest on any RK3588 image.
+- **Leaner:** LibreOffice is Writer and Calc (Impress/Draw and an unused icon theme out,
+  ~35 MB); Remmina, Shotwell and btop removed; `iw` added.
 
 ## Fixed in v2.0.1
 
