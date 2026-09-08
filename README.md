@@ -9,7 +9,7 @@ someone who bought the board expecting a real computer, and got tired of waiting
 - 🎬 **Hardware video decode — including in the browser, including 10-bit** — 4K60 YouTube
   and 4K HEVC Main10 run on the RK3588's video engine, not the CPU. The driver doing it is
   **ours**: the [rockchip-vaapi fork](https://github.com/defcom5-rockchip/rockchip-vaapi)
-  (v2.1.4) — H.264, HEVC, VP9 at 8 and 10 bits, verified pixel-identical to software decode.
+  (v2.1.5 in the 2.0.3 recipe; 2.0.2 ships v2.1.4) — H.264, HEVC, VP9 at 8 and 10 bits, verified pixel-identical to software decode.
   Jellyfin's web client direct-plays 10-bit in Firefox in hardware. *(AV1 is software; 10-bit
   at 4K60 can stutter until the next driver phase — see [KNOWN-ISSUES](KNOWN-ISSUES.md).)*
 - 🦊 **Firefox is the default browser** — flicker-free (no ANGLE) *and* hardware-decoded, out of the

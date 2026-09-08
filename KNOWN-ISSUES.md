@@ -99,6 +99,26 @@ image with this kernel; the permanent fix is mainline's Panthor driver.
 
 ---
 
+## Coming in 2.0.3 (in progress — this section tracks the next bake)
+
+- **Video driver v2.1.5** (released 2026-09-08, already in the recipe): surfaces are described
+  by the bit depth they were *created* with until a frame is decoded — the cause of the
+  "garbled, then green" 10-bit playback in Chromium builds that use the VA-API decoder
+  (driver KI-8); and libva now finds the driver on Panthor/Panfrost GPU stacks without
+  `LIBVA_DRIVER_NAME` (driver KI-9). On Pi Desktop itself the bundled Chromium decodes through
+  a different plug-in (VID-4), so the visible gain here is robustness for every client that
+  exports a surface before decoding into it.
+- **BOOT-2 fix**: ssh host-key generation ordered before sshd, so a fresh install answers ssh
+  on the first boot instead of after four minutes.
+- **mpv**: the ARMED-orange icon becomes the shipped one; the mpv 0.38 package gains real
+  `Depends:` so an `apt autoremove` can never remove its libraries again.
+- **10-bit at 4K60**: an mpv profile that switches to the copy path for high-frame-rate 10-bit
+  (measured 3× smoother than zero-copy there) while movies keep zero-copy.
+- **Under evaluation**: the RGA hardware repack in the driver (VID-3) and real 10-bit output in
+  the Chromium plug-in (VID-4).
+
+---
+
 ## Scope and horizon
 
 Pi Desktop is built on the **vendor 6.1 BSP kernel**, because that is what does 4K@120 and
