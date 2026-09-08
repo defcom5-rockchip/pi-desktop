@@ -66,6 +66,19 @@ plug-in. **Firefox is the browser to use for 10-bit** — it direct-plays it in 
 
 ---
 
+## BOOT-2: On the very first boot, ssh takes about four minutes to come up
+
+**Status:** open, fixed in 2.0.3 · **Severity:** first boot only
+
+The image ships without ssh host keys (correct: every install gets its own), and a service
+generates them on first boot. sshd starts before that finishes, fails, and systemd backs off
+("start request repeated too quickly") until the keys exist, then it starts and stays up. On
+image 5's first boot that window was 17:47 to 17:52; the second boot had zero failures. If you
+install headless and ssh refuses at first, wait five minutes before assuming the worst. 2.0.3
+orders key generation before sshd.
+
+---
+
 ## BOOT-1: First boot is busy for a couple of minutes
 
 **Status:** open · **Severity:** cosmetic
@@ -98,6 +111,8 @@ then, the fork is the reason the features work.
 ---
 
 ## Fixed in v2.0.2
+
+*Release soak: two boots on an Orange Pi 5B, swept against the 2.0.1 journal baseline — zero hand repairs, 0 failed units on the second boot, error-level message count identical to 2.0.1.*
 
 - **HEVC is hardware-decoded — including in the browser.** The driver gained a real HEVC
   bitstream assembler (v2.1.0), verified pixel-identical to software decode; Firefox ships
