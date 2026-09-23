@@ -26,11 +26,11 @@ This was two different faults that looked like one, which is why every single fl
    clean on the same kernel where 132 flickered).
 
 **What we did about it:** Firefox is the default — Gecko/WebRender doesn't use ANGLE, so it's
-flicker-free *and* hardware-decodes video. Chrome and Chromium stay available and, since 2.0.3,
-both run with GPU compositing and hardware video decode (see VID-4); what remains of the flicker
-is (2), on image-heavy pages. Until 2.0.3 Chrome shipped with GPU compositing off to hide (1),
-which also silently turned its hardware decode off — 4K60 VP9 in Chrome was 450 % CPU. The cure
-for (2) is a different GL driver, which is what the successor image uses — see *Final release*.
+flicker-free *and* hardware-decodes video. **Chrome ships flicker-free by default** (GPU compositing
+off, which also means no hardware video in that launcher — 4K60 VP9 there is CPU decode). A second
+launcher, **"Google Chrome (Hardware Video)"**, runs with GPU compositing and VA-API decode (see VID-4)
+and shows (2) on image-heavy pages. Chromium 153 runs the hardware-video way and shows (2) too. The
+cure for (2) is a different GL driver, which is what the successor image uses — see *Final release*.
 
 ---
 
@@ -65,7 +65,7 @@ does no HDR tone mapping, whichever decoder produced the pixels. mpv tone-maps t
 
 ## VID-4: 10-bit HEVC in Chrome/Chromium is not hardware-decoded; 10-bit VP9 is
 
-**Status:** partly fixed in 2.0.3 · **Severity:** performance · **Affects:** Chrome 153, Chromium 153
+**Status:** partly fixed in 2.0.3 · **Severity:** performance · **Affects:** Chrome 153 (Hardware Video launcher), Chromium 153
 
 2.0.3 moves Chromium from the V4L2 plug-in lane (132) to the same VA-API lane as Chrome and
 Firefox (xtradeb 153). Measured on hardware: HEVC 8-bit, H.264 and **VP9 Profile 2 (10-bit) at
@@ -113,10 +113,10 @@ image with this kernel; the permanent fix is mainline's Panthor driver.
 
 - **VID-1 (1)**: the Chromium typing/text-field flicker — mutter composites browser surfaces instead
   of direct-scanning them out.
-- **Chrome and Chromium decode video in hardware** (VID-4): Chrome's launcher drops the compositing-off
-  flag that was also disabling its decoder, and gains the VA-API flag set plus a render-node override
-  (the NPU registers as a second render node and Chromium picked it). Chromium moves to xtradeb 153 on
-  the same lane. HEVC 8-bit, H.264 and 10-bit VP9 at 4K60 measured on the VPU in both.
+- **Hardware video in Chrome and Chromium** (VID-4): a new "Google Chrome (Hardware Video)" launcher
+  with the VA-API flag set plus a render-node override (the NPU registers as a second render node and
+  Chrome picked it); the default Chrome launcher stays flicker-free. Chromium moves to xtradeb 153 on
+  the same VA-API lane. HEVC 8-bit, H.264 and 10-bit VP9 at 4K60 measured on the VPU in both.
 - **Ethernet dead after a long sleep** (kernel): `stmmac_resume()` started phylink before the MAC
   reset, so the Motorcomm YT8531 PHY came up with a corrupt advertisement (ANAR 0x0de0) and never
   linked. Backported the upstream reorder plus a PHY re-init on resume; 7/7 long-sleep wakes clean at

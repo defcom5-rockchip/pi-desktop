@@ -1,9 +1,10 @@
 # Changelog
 
 ## 2.0.3 — "Crystal Blue Persuasion" — FINAL release on the ubuntu-rockchip base
-- Chrome and Chromium now decode video in hardware (VA-API + render-node override; Chrome's compositing-off
-  pre-flag, which also killed its decoder, is gone). Chromium moves from liujianfeng 132 (V4L2 lane) to
-  xtradeb 153 on the same VA-API lane. Measured: HEVC 8-bit, H.264, 10-bit VP9 at 4K60 on the VPU.
+- Hardware video in Chrome via a second launcher, "Google Chrome (Hardware Video)" (VA-API + render-node
+  override); the default Chrome launcher stays flicker-free (software compositing, CPU video). Chromium moves
+  from liujianfeng 132 (V4L2 lane) to xtradeb 153 on the VA-API lane. Measured: HEVC 8-bit, H.264, 10-bit VP9
+  at 4K60 on the VPU in both.
 - Chromium typing/text-field flicker fixed: mutter composites browser surfaces instead of direct scanout
   (`/etc/environment.d/60-pidesktop-mutter.conf`). The image-thumbnail flicker is ANGLE-on-panfork and stays;
   Firefox remains the default (VID-1).
