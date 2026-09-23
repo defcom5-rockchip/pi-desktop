@@ -26,9 +26,11 @@ This was two different faults that looked like one, which is why every single fl
    clean on the same kernel where 132 flickered).
 
 **What we did about it:** Firefox is the default — Gecko/WebRender doesn't use ANGLE, so it's
-flicker-free *and* hardware-decodes video. Chromium stays available; after 2.0.3 it flickers only
-on image-heavy pages. The cure for (2) is a different GL driver, which is what the successor
-image does — see *Final release*.
+flicker-free *and* hardware-decodes video. Chrome and Chromium stay available and, since 2.0.3,
+both run with GPU compositing and hardware video decode (see VID-4); what remains of the flicker
+is (2), on image-heavy pages. Until 2.0.3 Chrome shipped with GPU compositing off to hide (1),
+which also silently turned its hardware decode off — 4K60 VP9 in Chrome was 450 % CPU. The cure
+for (2) is a different GL driver, which is what the successor image uses — see *Final release*.
 
 ---
 
@@ -61,17 +63,15 @@ does no HDR tone mapping, whichever decoder produced the pixels. mpv tone-maps t
 
 ---
 
-## VID-4: 10-bit files in the image's Chromium are transcoded, not hardware-decoded
+## VID-4: 10-bit HEVC in Chrome/Chromium is not hardware-decoded; 10-bit VP9 is
 
-**Status:** by design for now · **Severity:** convenience (Jellyfin-style setups transcode 10-bit)
+**Status:** partly fixed in 2.0.3 · **Severity:** performance · **Affects:** Chrome 153, Chromium 153
 
-The `+rkmpp` Chromium decodes through a V4L2 plug-in (libv4l-rkmpp), not through our VA-API
-driver, and that plug-in outputs 8-bit NV12 only. Before 2.0.2 it *advertised* 10-bit anyway
-and aborted Chromium's whole GPU process on the first 10-bit frame (a white/black flash). Our
-fork of the plug-in, shipped in 2.0.2, hides the 10-bit profiles and removes the abort:
-Chromium now reports 10-bit unsupported, so a media server transcodes it and 8-bit HEVC plays
-in hardware. Real 10-bit in Chromium needs the same RGA conversion as VID-3, inside the
-plug-in. **Firefox is the browser to use for 10-bit** — it direct-plays it in hardware.
+2.0.3 moves Chromium from the V4L2 plug-in lane (132) to the same VA-API lane as Chrome and
+Firefox (xtradeb 153). Measured on hardware: HEVC 8-bit, H.264 and **VP9 Profile 2 (10-bit) at
+4K60** decode on the VPU in both browsers. HEVC Main10 is the exception: Chromium's own policy
+does not attempt hardware HEVC 10-bit on Linux, so those files fall back to software or, in
+Jellyfin, to a transcode. Firefox and mpv play HEVC Main10 in hardware, zero-copy.
 
 ---
 
@@ -113,6 +113,10 @@ image with this kernel; the permanent fix is mainline's Panthor driver.
 
 - **VID-1 (1)**: the Chromium typing/text-field flicker — mutter composites browser surfaces instead
   of direct-scanning them out.
+- **Chrome and Chromium decode video in hardware** (VID-4): Chrome's launcher drops the compositing-off
+  flag that was also disabling its decoder, and gains the VA-API flag set plus a render-node override
+  (the NPU registers as a second render node and Chromium picked it). Chromium moves to xtradeb 153 on
+  the same lane. HEVC 8-bit, H.264 and 10-bit VP9 at 4K60 measured on the VPU in both.
 - **Ethernet dead after a long sleep** (kernel): `stmmac_resume()` started phylink before the MAC
   reset, so the Motorcomm YT8531 PHY came up with a corrupt advertisement (ANAR 0x0de0) and never
   linked. Backported the upstream reorder plus a PHY re-init on resume; 7/7 long-sleep wakes clean at
