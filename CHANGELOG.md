@@ -1,10 +1,17 @@
 # Changelog
 
-## 2.0.3 — in progress
-- Video driver v2.1.5: created-depth surface description (Chromium VA-API 10-bit green, driver KI-8);
-  libva auto-detection on Panthor/Panfrost stacks (driver KI-9). Recipe updated 2026-09-08.
-- Planned: ssh host-key ordering before sshd (BOOT-2); ARMED-orange mpv icon; real `Depends:` for the
-  mpv 0.38 package; 4K60 10-bit copy-path mpv profile.
+## 2.0.3 — "Crystal Blue Persuasion" — FINAL release on the ubuntu-rockchip base
+- Chromium typing/text-field flicker fixed: mutter composites browser surfaces instead of direct scanout
+  (`/etc/environment.d/60-pidesktop-mutter.conf`). The image-thumbnail flicker is ANGLE-on-panfork and stays;
+  Firefox remains the default (VID-1).
+- Kernel 6.1.0-1027.27 (2026-09-08 build): Ethernet-after-long-sleep resume race fixed (stmmac/phylink reorder
+  + YT8531 re-init; upstreamed to Armbian); Bluetooth SCO use-after-free fix re-applied; RGA 1.3.13.
+  Suspend stays masked (sleep device tree not baked).
+- BOOT-2 fixed: ssh host keys generated before sshd on first boot.
+- Video driver v2.1.5 (created-depth surface export; libva auto-detection on Panthor/Panfrost stacks).
+- mpv `video-sync=display-resample`: 4K60 zero-copy drops 605/900 → 0.
+- Documented the AP6275P Bluetooth fix set (boot race + coexistence values) as canonical.
+- This closes the 2.x line. Successor: Pi-Desktop 3.0 on Armbian (Ubuntu 26.04 / GNOME 50 / vendor 6.1.172).
 
 ## 2.0.2 — 2026-09-07
 - HEVC hardware-decoded, including in Firefox (driver v2.1.0+, Firefox HEVC policy).

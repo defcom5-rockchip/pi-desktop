@@ -9,17 +9,26 @@ Current as of **v2.0.1**.
 
 ## VID-1: Chromium-family browsers flicker; Firefox doesn't — so Firefox is the default
 
-**Status:** root-caused, unfixable on this GPU stack · **Severity:** cosmetic · **Affects:** Chromium, Chrome (any window size)
+**Status:** two causes found; one fixed in 2.0.3, one is the GPU driver · **Severity:** cosmetic · **Affects:** Chromium, Chrome
 
-We finally ran this to ground: modern Chromium renders through ANGLE (mandatory since ~M117),
-and ANGLE on this image's GPU stack (panfork/Mesa 23) flickers — typing carets, UI redraws,
-independent of resolution or refresh rate. No flag fixes it without breaking something else.
+This was two different faults that looked like one, which is why every single flag "almost" fixed it:
 
-**What we did about it:** made Firefox the default — Gecko/WebRender doesn't use ANGLE, so it's
-flicker-free *and* hardware-decodes video. Chrome ships pre-flagged for its one job (DRM
-streaming at DRM's own 720p cap, where its flicker-fix flag costs nothing). Chromium stays
-available for those who want it, flicker and all. The real cure is the mainline GPU stack
-(Panthor + current Mesa) — see *Scope and horizon*.
+1. **Typing / text-field flicker — fixed in 2.0.3.** It only appeared when mutter put the browser's
+   buffer straight onto a hardware plane (direct scanout). 2.0.3 composites those surfaces
+   instead (`/etc/environment.d/60-pidesktop-mutter.conf`, `MUTTER_DEBUG=disable-direct-scanout`).
+   Measured on hardware 2026-08-27; the split was confirmed 2026-09-22 when the same browser ran
+   clean on a stack that composites by default. Cost: one extra composite pass for fullscreen
+   windows. Delete the file to get direct scanout back.
+2. **Thumbnail / image flicker — not fixable on this stack.** Modern Chromium renders through
+   ANGLE (mandatory since ~M117), and ANGLE on panfork Mesa 23 mis-presents partial updates. The
+   same Chromium on the ARM blob driver is clean, so it is the GL driver, not the browser and not
+   the kernel (the kernel logged nothing during 30 s of reproduced flicker, and Chromium 114 was
+   clean on the same kernel where 132 flickered).
+
+**What we did about it:** Firefox is the default — Gecko/WebRender doesn't use ANGLE, so it's
+flicker-free *and* hardware-decodes video. Chromium stays available; after 2.0.3 it flickers only
+on image-heavy pages. The cure for (2) is a different GL driver, which is what the successor
+image does — see *Final release*.
 
 ---
 
@@ -68,14 +77,15 @@ plug-in. **Firefox is the browser to use for 10-bit** — it direct-plays it in 
 
 ## BOOT-2: On the very first boot, ssh takes about four minutes to come up
 
-**Status:** open, fixed in 2.0.3 · **Severity:** first boot only
+**Status:** fixed in 2.0.3 · **Severity:** first boot only
 
 The image ships without ssh host keys (correct: every install gets its own), and a service
 generates them on first boot. sshd starts before that finishes, fails, and systemd backs off
 ("start request repeated too quickly") until the keys exist, then it starts and stays up. On
 image 5's first boot that window was 17:47 to 17:52; the second boot had zero failures. If you
 install headless and ssh refuses at first, wait five minutes before assuming the worst. 2.0.3
-orders key generation before sshd.
+makes key generation a hard prerequisite of sshd (the 2.0.1 unit only ordered itself `Before=`,
+which socket-activated sshd ignored).
 
 ---
 
@@ -99,34 +109,54 @@ image with this kernel; the permanent fix is mainline's Panthor driver.
 
 ---
 
-## Coming in 2.0.3 (in progress — this section tracks the next bake)
+## Fixed in v2.0.3 "Crystal Blue Persuasion" — the final release on this base
 
-- **Video driver v2.1.5** (released 2026-09-08, already in the recipe): surfaces are described
-  by the bit depth they were *created* with until a frame is decoded — the cause of the
-  "garbled, then green" 10-bit playback in Chromium builds that use the VA-API decoder
-  (driver KI-8); and libva now finds the driver on Panthor/Panfrost GPU stacks without
-  `LIBVA_DRIVER_NAME` (driver KI-9). On Pi Desktop itself the bundled Chromium decodes through
-  a different plug-in (VID-4), so the visible gain here is robustness for every client that
-  exports a surface before decoding into it.
-- **BOOT-2 fix**: ssh host-key generation ordered before sshd, so a fresh install answers ssh
-  on the first boot instead of after four minutes.
-- **mpv**: the ARMED-orange icon becomes the shipped one; the mpv 0.38 package gains real
-  `Depends:` so an `apt autoremove` can never remove its libraries again.
-- **10-bit at 4K60**: an mpv profile that switches to the copy path for high-frame-rate 10-bit
-  (measured 3× smoother than zero-copy there) while movies keep zero-copy.
-- **Under evaluation**: the RGA hardware repack in the driver (VID-3) and real 10-bit output in
-  the Chromium plug-in (VID-4).
+- **VID-1 (1)**: the Chromium typing/text-field flicker — mutter composites browser surfaces instead
+  of direct-scanning them out.
+- **Ethernet dead after a long sleep** (kernel): `stmmac_resume()` started phylink before the MAC
+  reset, so the Motorcomm YT8531 PHY came up with a corrupt advertisement (ANAR 0x0de0) and never
+  linked. Backported the upstream reorder plus a PHY re-init on resume; 7/7 long-sleep wakes clean at
+  1 Gbps on hardware (2026-09-08). Merged into Armbian's vendor kernel from our report the next day.
+  *Suspend itself stays masked in this release* — the sleep-capable device tree it was soaked with
+  was not baked in time, and shipping suspend without it would be untested. The fix is in the
+  kernel for anyone who enables sleep by hand.
+- **Bluetooth SCO use-after-free** (CVE fix that had been reverted in 1.x for a build conflict):
+  re-applied, open-coded for this kernel. Kernel 6.1.0-1027.27 build of 2026-09-08.
+- **BOOT-2**: sshd (service and socket) now hard-depends on the host-key generation unit, so it
+  cannot start before the keys exist — a fresh install answers ssh on the first boot.
+- **Video driver v2.1.5**: surfaces described by their created bit depth until decoded (fixes the
+  "garbled, then green" 10-bit start in VA-API Chromium builds); libva finds the driver on
+  Panthor/Panfrost stacks without `LIBVA_DRIVER_NAME`.
+- **mpv**: `video-sync=display-resample` — 4K60 zero-copy went from 605 dropped frames in 900 to 0.
+- **AP6275P Bluetooth**: the boot-race fix and the coexistence timing values, unchanged since 1.0,
+  now documented as the canonical set (they were nearly lost in the successor image).
+
+Not done, and now closed with the release: the RGA repack for 10-bit at 4K60 in Firefox (VID-3),
+real 10-bit in the Chromium plug-in (VID-4), the ARMED-orange mpv icon.
 
 ---
 
+## Final release
+
+**2.0.3 "Crystal Blue Persuasion" is the last Pi Desktop built on Joshua Riek's `ubuntu-rockchip`.** That project is archived;
+this fork kept it alive for the Orange Pi 5B for a year, and it goes out working: 4K, hardware
+video in both browsers, Bluetooth that survives WiFi, a kernel patched by hand for the CVEs that
+mattered to a desktop. Thank you, Joshua — none of this existed without the base you built.
+
+The successor is **Pi-Desktop 3.0** on the Armbian build framework: Ubuntu 26.04, GNOME 50, and
+Rockchip's vendor kernel as Armbian tracks it (6.1.172 at the time of writing, against 6.1.75 here).
+That trades a hand-maintained kernel for one that inherits a hundred stable releases of fixes, and
+the ARM GL driver for Mesa panfork — which is what makes Chromium flicker-free there. What it does
+not do yet: Firefox 8-bit video in hardware (the ARM driver lacks a two-channel 8-bit import format)
+and 4K@120 as a default. Follow it in this organisation's repositories when it leaves test.
+
 ## Scope and horizon
 
-Pi Desktop is built on the **vendor 6.1 BSP kernel**, because that is what does 4K@120 and
-hardware video on this SoC *today*. The mainline world is moving fast — RK3588 H.264/HEVC
-decoders are merged, 10-bit HDMI output is in review, and a community forward-port of the vendor
-media stack onto Linux 6.18 already exists. When that path matures for this board, VID-1, VID-4
-and GPU-1 all fall at once (Panthor + modern Mesa), and this file gets a lot shorter. Until
-then, the fork is the reason the features work.
+Pi Desktop 2.x is built on the **vendor 6.1 BSP kernel** (6.1.75 base), because that is what did
+4K@120 and hardware video on this SoC when the line started. The vendor line continues in
+Pi-Desktop 3.0 on Armbian's much newer drop of the same kernel; the mainline world (Panthor, current
+Mesa, merged RK3588 decoders) remains the long-term destination and is where VID-1 (2), VID-4 and
+GPU-1 all fall at once.
 
 ---
 
