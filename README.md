@@ -1,6 +1,11 @@
 # Pi Desktop
 ### The Orange Pi 5B, as it should have shipped.
 
+> **Retired (2026-09-23).** v2.0.2 is the last Pi Desktop image built on Joshua Riek's
+> `ubuntu-rockchip`. The line continues as **Pi-Desktop 3.0** on the Armbian build framework
+> (Ubuntu 26.04 / GNOME 50 / Rockchip vendor kernel as Armbian tracks it), in this organisation.
+> See [KNOWN-ISSUES → Final release](KNOWN-ISSUES.md#final-release--retired-at-v202).
+
 A clean, fast, self-healing Linux desktop for the Orange Pi 5B (RK3588) — built by
 someone who bought the board expecting a real computer, and got tired of waiting for one.
 
@@ -40,7 +45,7 @@ actually work, so players fall back to correct software playback instead of a gr
 Release notes say what a release *doesn't* fix, too.
 
 ## Download
-**v2.0.3 "Crystal Blue Persuasion" (final)** — [Releases](../../releases). Flash the `.img.xz` to microSD or eMMC,
+**v2.0.2 (final release on this base)** — [Releases](../../releases). Flash the `.img.xz` to microSD or eMMC,
 verify the SHA256, boot. First boot expands to fill the card.
 
 **Installing to eMMC? Read [EMMC-INSTALL.md](EMMC-INSTALL.md) first.** Copying a root filesystem

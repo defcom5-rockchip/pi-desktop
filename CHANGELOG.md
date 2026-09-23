@@ -1,6 +1,6 @@
 # Changelog
 
-## 2.0.3 — "Crystal Blue Persuasion" — FINAL release on the ubuntu-rockchip base
+## Unreleased — post-2.0.2 fixes in the recipe (the line was retired at v2.0.2; nothing below shipped as an image)
 - Hardware video in Chrome via a second launcher, "Google Chrome (Hardware Video)" (VA-API + render-node
   override); the default Chrome launcher stays flicker-free (software compositing, CPU video). Chromium moves
   from liujianfeng 132 (V4L2 lane) to xtradeb 153 on the VA-API lane. Measured: HEVC 8-bit, H.264, 10-bit VP9
@@ -15,7 +15,8 @@
 - Video driver v2.1.5 (created-depth surface export; libva auto-detection on Panthor/Panfrost stacks).
 - mpv `video-sync=display-resample`: 4K60 zero-copy drops 605/900 → 0.
 - Documented the AP6275P Bluetooth fix set (boot race + coexistence values) as canonical.
-- This closes the 2.x line. Successor: Pi-Desktop 3.0 on Armbian (Ubuntu 26.04 / GNOME 50 / vendor 6.1.172).
+- Pi Desktop on the ubuntu-rockchip base is retired at v2.0.2 (2026-09-23). Successor: Pi-Desktop 3.0 on Armbian
+  (Ubuntu 26.04 / GNOME 50 / vendor 6.1.172).
 
 ## 2.0.2 — 2026-09-07
 - HEVC hardware-decoded, including in Firefox (driver v2.1.0+, Firefox HEVC policy).

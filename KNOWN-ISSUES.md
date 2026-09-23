@@ -109,7 +109,12 @@ image with this kernel; the permanent fix is mainline's Panthor driver.
 
 ---
 
-## Fixed in v2.0.3 "Crystal Blue Persuasion" — the final release on this base
+## Fixed after v2.0.2, in the recipe only (never released — the line was retired first)
+
+**v2.0.2 is the last published Pi Desktop image on this base.** The fork's final commit carries the
+fixes below for anyone who builds it (`./build.sh --board=orangepi-5b --suite=noble --flavor=desktop`);
+none of them was baked into a released image.
+
 
 - **VID-1 (1)**: the Chromium typing/text-field flicker — mutter composites browser surfaces instead
   of direct-scanning them out.
@@ -140,19 +145,20 @@ real 10-bit in the Chromium plug-in (VID-4), the ARMED-orange mpv icon.
 
 ---
 
-## Final release
+## Final release — retired at v2.0.2
 
-**2.0.3 "Crystal Blue Persuasion" is the last Pi Desktop built on Joshua Riek's `ubuntu-rockchip`.** That project is archived;
-this fork kept it alive for the Orange Pi 5B for a year, and it goes out working: 4K, hardware
-video in both browsers, Bluetooth that survives WiFi, a kernel patched by hand for the CVEs that
-mattered to a desktop. Thank you, Joshua — none of this existed without the base you built.
+**Pi Desktop on Joshua Riek's `ubuntu-rockchip` is retired. v2.0.2 is its last image.** That project
+is archived upstream; this fork kept it alive for the Orange Pi 5B for a year and goes out working:
+4K, hardware video in both browsers, Bluetooth that survives WiFi, a kernel patched by hand for the
+CVEs that mattered to a desktop. Thank you, Joshua — none of this existed without the base you built.
 
 The successor is **Pi-Desktop 3.0** on the Armbian build framework: Ubuntu 26.04, GNOME 50, and
 Rockchip's vendor kernel as Armbian tracks it (6.1.172 at the time of writing, against 6.1.75 here).
-That trades a hand-maintained kernel for one that inherits a hundred stable releases of fixes, and
-the ARM GL driver for Mesa panfork — which is what makes Chromium flicker-free there. What it does
-not do yet: Firefox 8-bit video in hardware (the ARM driver lacks a two-channel 8-bit import format)
-and 4K@120 as a default. Follow it in this organisation's repositories when it leaves test.
+That trades a hand-maintained kernel for one that inherits a hundred stable releases of fixes — the
+Ethernet-after-sleep fix from this fork is already in it, merged upstream — and Mesa panfork for the
+ARM GL driver, which is what makes Chromium flicker-free there. What it does not do yet: Firefox 8-bit
+video in hardware (the ARM driver lacks a two-channel 8-bit import format), and 4K@120 as a default.
+Follow it in this organisation's repositories when it leaves test.
 
 ## Scope and horizon
 
