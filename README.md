@@ -10,6 +10,8 @@ A GNOME 50 desktop image for the Orange Pi 5B (RK3588S), built from Ubuntu 26.04
 build framework, on Armbian's Rockchip vendor kernel 6.1.172 plus eleven Pi-Desktop patches. Not affiliated
 with or endorsed by Canonical or Armbian. Not a Raspberry Pi product.
 
+![The Pi-Desktop 4.0 desktop: tartan-canopied penguins parachuting over a dusk horizon](docs/img/desktop.png)
+
 ## What it is
 
 Everything below was checked on an Orange Pi 5B running the release candidate (test9, 2026-10-03: 78 of 79
