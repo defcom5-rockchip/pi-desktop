@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pi-Desktop — download and install</title>
+<meta name="description" content="Download Pi-Desktop 4.0 Plaid for the Orange Pi 5B, verify the checksum, write it to a microSD card or eMMC, and what the first boot does.">
+<link rel="stylesheet" href="style.css">
+<link rel="icon" href="img/pi-desktop.svg" type="image/svg+xml">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <a class="brand" href="index.html"><img src="img/pi-desktop.svg" alt="" width="40" height="40"><span>Pi-Desktop</span></a>
+    <nav>
+      <a href="download.html" aria-current="page">Download</a>
+      <a href="https://github.com/defcom5-rockchip/pi-desktop/blob/main/KNOWN-ISSUES.md">Known issues</a>
+      <a href="privacy.html">Privacy</a>
+      <a href="legal.html">Legal</a>
+      <a href="security.html">Security</a>
+      <a href="https://github.com/defcom5-rockchip/pi-desktop">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <h1>Download and install</h1>
+    <p class="lede">Pi-Desktop 4.0 "Plaid" for the Orange Pi 5B. One compressed image, one checksum file, about 1.5 GB to download.</p>
+
+    <p><a class="btn" href="https://github.com/defcom5-rockchip/pi-desktop/releases">Releases on GitHub</a></p>
+
+    <h2>What you need</h2>
+    <ul>
+      <li>An Orange Pi 5B. Other RK3588 boards are not supported by this image.</li>
+      <li>A microSD card of 16 GB or more (the image is about 7.3 GB uncompressed and grows to fill the card on first boot), or the board's eMMC.</li>
+      <li>An HDMI monitor, keyboard and mouse for the first boot. 120 Hz needs an HDMI 2.1 monitor and cable; 4K at 60 Hz works on any 4K HDMI monitor.</li>
+      <li>A power supply rated for the board. A marginal phone charger browns out under load and looks exactly like a software crash.</li>
+    </ul>
+
+    <h2>1. Verify the checksum</h2>
+    <p>Each release ships the image and a <code>.sha256</code> file next to it. On Linux or macOS, in the folder you downloaded to:</p>
+<pre><code>sha256sum -c Pi-Desktop-4.0-Plaid-*.sha256
+# expected output: &lt;image name&gt;: OK</code></pre>
+    <p>On Windows: <code>certutil -hashfile &lt;image file&gt; SHA256</code> and compare with the contents of the <code>.sha256</code> file. The exact file names are on the release page.</p>
+
+    <h2>2. Write the image</h2>
+    <p>Writing the image erases the card or eMMC completely. Pick one method.</p>
+    <h3>GNOME Disks (Linux)</h3>
+    <ol>
+      <li>Insert the card. Open <strong>Disks</strong>, select the card in the left column — check its size, not just its name.</li>
+      <li>Menu (⋮) ▸ <strong>Restore Disk Image…</strong>, choose the downloaded image. Disks reads <code>.xz</code> images directly; for a <code>.zst</code> image decompress it first (<code>zstd -d</code>).</li>
+      <li>Start Restoring, wait for it to finish, then eject.</li>
+    </ol>
+    <h3>balenaEtcher (Linux, macOS, Windows)</h3>
+    <ol>
+      <li>Flash from file ▸ select the downloaded image (if Etcher refuses the compressed file, decompress it first).</li>
+      <li>Select target ▸ the card. Check the size.</li>
+      <li>Flash. Etcher verifies the write itself.</li>
+    </ol>
+    <h3>dd (Linux, macOS)</h3>
+    <p>Find the device first (<code>lsblk</code> on Linux, <code>diskutil list</code> on macOS) and make sure it is the card, not your system disk. Replace <code>/dev/sdX</code>:</p>
+<pre><code># .xz image
+xz -dc Pi-Desktop-4.0-Plaid-*.img.xz | sudo dd of=/dev/sdX bs=4M status=progress conv=fsync
+# .zst image
+zstd -dc Pi-Desktop-4.0-Plaid-*.img.zst | sudo dd of=/dev/sdX bs=4M status=progress conv=fsync
+sync</code></pre>
+
+    <h2>3. First boot</h2>
+    <ol>
+      <li>Insert the card, connect the monitor, keyboard and mouse, power on. The first boot takes longer: it grows the filesystem to the whole card.</li>
+      <li>Armbian's setup asks for a user name, a password, your real name and a shell. Pi-Desktop then asks for a <strong>computer name</strong> (it suggests <code>&lt;user&gt;-pidesktop</code>). The time zone and locale are suggested from your public IP address (see the <a href="privacy.html">privacy page</a>) and can be changed.</li>
+      <li>The setup session logs you in without asking. From the next boot on, you get a login screen.</li>
+      <li>On an HDMI 2.1 monitor, 120 Hz is in <strong>Settings ▸ Displays ▸ Refresh Rate</strong>. <em>Pi-Desktop How-To.txt</em> on the desktop explains screen scaling at 120 Hz, how to get Google Chrome, and the apps that install on first click.</li>
+      <li>Firefox, LibreOffice, GIMP, Inkscape, Thunderbird, VSCodium and Google Chrome are in the app grid as placeholders; the first click downloads the real app from its own repository (you will be asked for your password).</li>
+    </ol>
+    <div class="note">
+      <strong>Wi-Fi during setup:</strong> the wizard can join a Wi-Fi network for the time-zone lookup. WPA3 and WPA2/WPA3 networks work on this image; earlier images and stock Armbian 26.04 refuse them (kernel patch 0006).
+    </div>
+
+    <h2>4. Installing to eMMC</h2>
+    <p>The 5B's onboard eMMC is faster and more reliable than any microSD, and it is also where most "I installed it and the board misbehaves" reports come from: on RK3588 the bootloader and the operating system can come from different places, and copying a root filesystem onto the eMMC does <em>not</em> install a bootloader. Write the <strong>whole image</strong> to the eMMC, from a running Pi-Desktop on a microSD, and read <a href="https://github.com/defcom5-rockchip/pi-desktop/blob/main/EMMC-INSTALL.md">EMMC-INSTALL.md</a> first — it covers identifying the right device, wiping a factory-Android eMMC, and maskrom recovery.</p>
+
+    <h2>Something wrong?</h2>
+    <p>Read <a href="https://github.com/defcom5-rockchip/pi-desktop/blob/main/KNOWN-ISSUES.md">KNOWN-ISSUES</a> first. Then <a href="https://github.com/defcom5-rockchip/pi-desktop/issues">open an issue</a> with your board revision, how you installed (SD / eMMC), your monitor's resolution and refresh rate, and <code>uname -a</code>. Security problems go through the <a href="security.html">security page</a>.</p>
+  </div>
+</main>
+
+<footer class="site">
+  <div class="wrap">
+    <p>Not affiliated with Canonical, Armbian, Rockchip, Arm, Google, Mozilla, Microsoft or Shenzhen Xunlong.</p>
+    <p>Code GPL-3.0-or-later · artwork CC BY-SA 4.0 · by defcom5-rockchip, with Claude as co-engineer · <a href="https://github.com/defcom5-rockchip/pi-desktop">source of this site</a></p>
+  </div>
+</footer>
+</body>
+</html>

@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pi-Desktop — security</title>
+<meta name="description" content="How to report a vulnerability in Pi-Desktop, what is in scope, what to expect, and the image's security-relevant defaults.">
+<link rel="stylesheet" href="style.css">
+<link rel="icon" href="img/pi-desktop.svg" type="image/svg+xml">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <a class="brand" href="index.html"><img src="img/pi-desktop.svg" alt="" width="40" height="40"><span>Pi-Desktop</span></a>
+    <nav>
+      <a href="download.html">Download</a>
+      <a href="https://github.com/defcom5-rockchip/pi-desktop/blob/main/KNOWN-ISSUES.md">Known issues</a>
+      <a href="privacy.html">Privacy</a>
+      <a href="legal.html">Legal</a>
+      <a href="security.html" aria-current="page">Security</a>
+      <a href="https://github.com/defcom5-rockchip/pi-desktop">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <h1>Security</h1>
+
+    <h2>Reporting a vulnerability</h2>
+    <p class="note">Use GitHub's private vulnerability reporting:<br><strong><a href="https://github.com/defcom5-rockchip/pi-desktop/security/advisories/new">github.com/defcom5-rockchip/pi-desktop/security/advisories/new</a></strong></p>
+    <p>Please don't open a public issue for something exploitable. Include the image version (<code>cat /etc/pi-desktop-release</code>), how to reproduce it, and what you think the impact is. The same contact is published machine-readably at <a href=".well-known/security.txt"><code>/.well-known/security.txt</code></a>.</p>
+
+    <h2>What to expect</h2>
+    <p>One maintainer, best effort. You get an acknowledgement when the report has been read, a fix as a recipe change and, when it matters, a new image, and an entry in the <a href="https://github.com/defcom5-rockchip/pi-desktop/blob/main/CHANGELOG.md">changelog</a> / <a href="https://github.com/defcom5-rockchip/pi-desktop/blob/main/KNOWN-ISSUES.md">known issues</a> saying what it was. Credit in the changelog if you want it. There is no bounty, no response-time guarantee and no embargo process beyond what GitHub's advisory workflow provides.</p>
+
+    <h2>Scope</h2>
+    <p><strong>In scope</strong> — what Pi-Desktop adds or changes:</p>
+    <ul>
+      <li>the eleven kernel patches;</li>
+      <li>the recipe and overlay: services, the first-click installers (key pinning, repository files, the polkit actions), polkit rules, udev rules, sshd and apt configuration, the os-release keeper;</li>
+      <li>the rebuilt packages: gnome-control-center <code>+pd3</code>, Rhythmbox 3.5.1, PipeWire/WirePlumber, MPP, rockchip-vaapi, librga, the libmali-hook shim;</li>
+      <li>the website.</li>
+    </ul>
+    <p><strong>Out of scope — report upstream instead:</strong> bugs in unmodified Ubuntu, Armbian, GNOME, Chromium, Rockchip or Arm components, and in Google Chrome, Firefox, Thunderbird, LibreOffice, GIMP, Inkscape and VSCodium (upstream builds installed on first click). If Pi-Desktop's configuration is what exposes an upstream bug, tell us too.</p>
+
+    <h2>Security-relevant defaults (verified on the release candidate)</h2>
+    <ul>
+      <li><strong>SSH</strong> is on and listening from the first boot. Root may log in with a key only; your own account can log in with its password. Choose a strong password at the setup wizard, or set <code>PasswordAuthentication no</code> in <code>/etc/ssh/sshd_config.d/</code> if you don't need it.</li>
+      <li><strong>No firewall</strong> is installed (no <code>ufw</code>).</li>
+      <li><strong>Ubuntu security updates install automatically</strong> (<code>unattended-upgrades</code>). The kernel, device tree, bootloader, BSP and firmware packages are held and change only with Pi-Desktop releases — kernel fixes arrive with releases, not daily. Armbian's kernel branch and Ubuntu's advisories are where to watch.</li>
+      <li><strong>polkit:</strong> the socket-activated agent helper of polkit ≥ 126 needs <code>SO_PEERPIDFD</code> (Linux 6.5), which the 6.1 kernel lacks, so the socket is masked and the classic setuid-root helper is used instead (<code>dpkg-statoverride</code>). That is the pre-126 configuration every Ubuntu release before 26.04 ran with.</li>
+      <li><strong>Third-party repositories</strong> added by the first-click installers use pinned signing keys: Google's <code>EB4C1BFD4F042F6DDDCCEC917721F63BD38B4796</code>, VSCodium's <code>1302DE60231889FE1EBACADC54678CF75A278D9C</code>. A key that does not match is refused and nothing is installed.</li>
+      <li><strong>Hardware video</strong> device nodes (<code>/dev/mpp_service</code>, <code>/dev/rga</code>) are opened to group <code>video</code> so the desktop user can decode in hardware; they are root-only on a stock Armbian image.</li>
+      <li><strong>The journal is persistent</strong> (200 MB cap) so crash evidence survives a reboot.</li>
+      <li><strong>Closed components we cannot audit:</strong> Arm's Mali user-space driver, Rockchip's boot binaries, the radio and GPU firmware (see the <a href="legal.html">legal page</a>).</li>
+    </ul>
+
+    <h2>Known hazards that are not vulnerabilities</h2>
+    <p>The vendor Wi-Fi driver bug fixed by patch 0006 failed closed (the association was refused); it never joined a network with weaker security. Nothing in Pi-Desktop's documentation asks you to lower your router's security to work around it.</p>
+    <p>The same text is kept as <a href="https://github.com/defcom5-rockchip/pi-desktop/blob/main/SECURITY.md">SECURITY.md</a> in the repository.</p>
+  </div>
+</main>
+
+<footer class="site">
+  <div class="wrap">
+    <p>Not affiliated with Canonical, Armbian, Rockchip, Arm, Google, Mozilla, Microsoft or Shenzhen Xunlong.</p>
+    <p>Code GPL-3.0-or-later · artwork CC BY-SA 4.0 · by defcom5-rockchip, with Claude as co-engineer · <a href="https://github.com/defcom5-rockchip/pi-desktop">source of this site</a></p>
+  </div>
+</footer>
+</body>
+</html>

@@ -1,11 +1,194 @@
 # Known Issues
 
-Pi Desktop is a niche distro with a single maintainer, running on the vendor 6.1 BSP kernel.
+Pi-Desktop is a niche distro with a single maintainer, running on the Rockchip vendor 6.1 kernel.
 This file exists on purpose. We'd rather tell you what's rough than let you find out.
 
-Current as of **v2.0.1**.
+Current as of **4.0 Plaid** (release candidate test9 on an Orange Pi 5B, 2026-10-03). The 2.0.x
+sections further down are the retired line's history and stay as they were.
 
 ---
+
+## 4.0 Plaid
+
+### PWR-1: No suspend
+
+**Status:** disabled on purpose · **Severity:** feature missing
+
+Suspend, hibernate and hybrid sleep are masked and GNOME's automatic suspend is off, as in 2.0.x.
+The 2.0.x Ethernet-after-sleep fix is in this kernel, but the sleep device-tree configuration and a
+resume soak were never done on this image, and shipping sleep untested is worse than shipping none.
+Shut down, or let the screensaver run.
+
+---
+
+### VID-5: 10-bit video is hardware-decoded in Firefox only; Chromium and Chrome do 8-bit
+
+**Status:** GPU-driver limits, split by browser · **Severity:** performance · **Affects:** 10-bit files
+
+Arm's Mali driver is what makes the desktop flicker-free, and it draws the line here:
+
+- **Chromium and Chrome** (the 8-bit path): H.264, HEVC and VP9 at 8 bit decode on the video engine
+  (8-bit HEVC measured on this image; 10-bit VP9 was measured with the same driver on the 2.0.x stack
+  and has not been re-measured here). HEVC Main10 is never attempted in hardware — Chromium's own
+  policy on Linux.
+- **Firefox** (the 10-bit path, once installed from its placeholder): runs on the GPU and decodes 10-bit
+  HEVC and VP9 Profile 2 in hardware, zero-copy. Its 8-bit video is **software**-decoded: the Mali
+  driver has no two-channel 8-bit import format, so the driver's 8-bit frames cannot be handed to it.
+- **mpv** plays through VA-API.
+- **AV1** is software everywhere; no browser path reaches the chip's AV1 block (see VID-2 below).
+
+Rule of thumb: everyday web video → Chromium or Chrome; 10-bit files and 10-bit Jellyfin → Firefox or
+mpv. HDR files look pale in Firefox, which does no HDR tone mapping on Linux.
+
+---
+
+### DSP-2: HDR looks pale — on the monitor we have, it is the monitor
+
+**Status:** monitor-side · **Severity:** cosmetic
+
+GNOME's HDR switch produces a correct HDR10 signal (EOTF ST 2084, BT.2020, static metadata — read back
+from the driver), but the maintainer's 32-inch 300-nit "HDR ready" monitor (EDID name "XHS XR32UMH")
+never switches into HDR and the picture goes pale. GNOME 50.4/50.5's HDR-metadata fix was backported
+onto Ubuntu's mutter and tested: the metadata is now complete, the monitor still does not enter HDR.
+Leave HDR off. A report from a monitor that is known to enter HDR from another source would settle it.
+
+---
+
+### USB-1: Bus-powered optical and hard drives need the combo USB port or a powered hub
+
+**Status:** hardware · **Severity:** informational
+
+Measured with a bus-powered USB Blu-ray writer: the USB-C port and the top USB 3.0 port could not power
+it; the lower "USB 2.0 / shared with Type-C" port can — and that port is USB 2.0 only. From the
+schematic: the combo port's 5 V comes straight from the board rail with no limiter; the stacked
+USB 3.0 + USB 2.0 pair shares one 1 A limit; USB-C gets about 1.45 A. Not fixable in software. For
+full speed and for burning, use a powered USB 3 hub.
+
+---
+
+### DSP-1: Two display outputs; a passive HDMI-to-DisplayPort adapter cannot work
+
+**Status:** hardware, not a bug · **Severity:** informational · **Affects:** DisplayPort-only monitors
+
+The Orange Pi 5B has exactly two display outputs: the **HDMI 2.1 port** and **DisplayPort over
+the USB-C port** (DP alt mode). There is no eDP: the chip's eDP lanes share the HDMI pins and go
+to the HDMI connector (schematic page 8, "HDMI TX/eDP1.3 MUX Port0").
+
+- **HDMI port → DisplayPort monitor: a passive adapter cannot work**, on this or any computer.
+  HDMI cannot speak DisplayPort. You need an **active HDMI-to-DisplayPort converter** (usually
+  USB-powered). 4K@120 through such a converter is not something we have verified.
+- **USB-C → DisplayPort cable** is the native DP path. **USB-C → HDMI** adapters are active
+  converters and ride the same path. On the RK3588 that path is **DP 1.4**: 4K@60 RGB, or
+  4K@120 only at 4:2:0. 4K@120 RGB is the HDMI port's job.
+- **We have not yet tested video over USB-C** on Pi-Desktop. The driver is enabled and probes
+  the port on hotplug. Reports with cable or adapter model welcome.
+
+---
+
+### BOOT-3: The first boot logs you in without asking; every boot after that shows a login screen
+
+**Status:** by design (Armbian's setup wizard) · **Severity:** cosmetic
+
+The first-login wizard enables autologin for the session it creates; a Pi-Desktop service turns it
+off at the next boot. Verified on the release candidate: the wizard boot auto-logs-in, the second boot
+asks for the password. If you need the login screen before ever rebooting, reboot once.
+
+---
+
+### APP-1: What is not in the image, and why
+
+**Status:** decisions · **Severity:** informational
+
+- **VLC** is out: on this image VLC 3's video path is software-only (it runs under XWayland without the GPU),
+  so it only duplicated mpv, badly. mpv is the video player, Rhythmbox the music player.
+- **PeaZip** is not shipped (a build exists; decision pending). Archive Manager (file-roller) is in.
+- **VS Code** is not offered: Microsoft's build has telemetry on by default. VSCodium is the
+  first-click alternative.
+- **Firefox, LibreOffice, GIMP, Inkscape, Thunderbird, VSCodium and Google Chrome** install on first
+  click from their own repositories and need the network for that. Six of the seven installers ran on
+  hardware (45 s to 5 min on the test card); the Firefox installer is the newest and has not been
+  timed yet. LibreOffice comes without Base (it drags in Java); `sudo apt install libreoffice-base`
+  adds it.
+- **libdvdcss** and AACS keys are not shipped. If a DVD refuses to play: `sudo apt install libdvd-pkg`.
+
+---
+
+### APP-2: mpv cannot open smb:// links
+
+**Status:** Ubuntu build option · **Severity:** minor
+
+Ubuntu builds mpv without SMB support. Opening the same file from Files works: Files hands mpv a local
+gvfs path.
+
+---
+
+### DSP-3: GNOME picks 125% scale on a 32-inch 4K monitor; at 120 Hz that costs video frames
+
+**Status:** GNOME default kept · **Severity:** performance at 4K@120 only
+
+GNOME's own maths (138 dpi against a 110 dpi target) chooses 125%. At 4K@120, fractional scaling
+made mpv drop about 211 frames in 19 s against 1 at 100%. The How-To on the desktop shows the
+alternative: Scale 100% plus Settings ▸ Accessibility ▸ Seeing ▸ Text Size.
+
+---
+
+### PWR-2: Screensaver and lock notes
+
+**Status:** open, low · **Severity:** cosmetic
+
+- GNOME's own screen blank is locked off (Settings ▸ Power shows a Screensaver group instead). A
+  blank at 4K@120 hard-hung the board before kernel patch 0010; the fix is in, the fence stays.
+- Locking — Super+L, or when the screensaver ends with "Ask for Password Afterwards" on — turns the
+  monitor off for a few seconds and relights it on the next input. That is stock GNOME, and since 0010
+  it is safe at 120 Hz (this exact path used to hang the board; re-tested 2026-09-25).
+- The screensaver's mpv has crashed after many hours of looping, with a kernel "GPU activity takes
+  longer than time interval" message alongside. The service restarts it (at most 3 times per 10 min).
+  Cause not found.
+
+---
+
+### AUD-1: Analog jack: 192 kHz is resampled to 96 kHz; headset microphone untested
+
+**Status:** hardware ceiling / untested · **Severity:** informational
+
+The ES8388 codec tops out at 96 kHz; 44.1, 48 and 96 kHz follow the file, 192 is resampled. The
+jack's headset-microphone input has not been tested (needs a 4-pole headset).
+
+---
+
+### BT-1: Bluetooth media buttons may not reach the browser
+
+**Status:** untested side effect · **Severity:** minor
+
+bluez's mpris-proxy is disabled because it relayed every YouTube ad as "stopped" and the Bluetooth
+speaker muted for ten seconds. mpris-proxy is also what forwards play/pause from Bluetooth headsets to
+desktop players, so those buttons may no longer work. Not measured; reports welcome.
+
+---
+
+### SYS-1: systemd-oomd margin on slow SD cards
+
+**Status:** mitigated · **Severity:** rare
+
+A big copy in Files used to get the whole session killed (Files ran inside the session bus's cgroup;
+systemd issue #35270). Files now runs in its own unit and unwritten data is capped at 256 MB. In the
+proof run — a multi-GB NAS-to-SD copy with Rhythmbox starting mid-copy — the session survived, but
+memory pressure peaked at 44% against oomd's 50% threshold. Thin margin on a slow card; eMMC not
+measured.
+
+---
+
+### SYS-2: Kernel log noise
+
+**Status:** cosmetic · **Severity:** none
+
+The vendor kernel logs the same harmless lines on every boot (venc devfreq, rkvdec2 "niu" resets,
+debugfs duplicates, dhd prealloc, HS200 clock, vop2 OPP), and `dw-dp fde50000.dp: AUX timeout` about
+ten times per HDMI hotplug (it probes the empty USB-C DisplayPort). None of these is an error.
+
+---
+
+## 2.0.x — the retired line (history, unchanged)
 
 ## VID-1: Chromium-family browsers flicker; Firefox doesn't — so Firefox is the default
 

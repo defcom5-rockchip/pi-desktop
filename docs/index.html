@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pi-Desktop — a desktop for the Orange Pi 5B</title>
+<meta name="description" content="Pi-Desktop 4.0 Plaid: a GNOME 50 desktop image for the Orange Pi 5B (RK3588S), built from Ubuntu 26.04 packages with the Armbian build framework. 4K at 120 Hz, hardware video, honest known-issues file.">
+<link rel="stylesheet" href="style.css">
+<link rel="icon" href="img/pi-desktop.svg" type="image/svg+xml">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <a class="brand" href="index.html"><img src="img/pi-desktop.svg" alt="" width="40" height="40"><span>Pi-Desktop</span></a>
+    <nav>
+      <a href="download.html">Download</a>
+      <a href="https://github.com/defcom5-rockchip/pi-desktop/blob/main/KNOWN-ISSUES.md">Known issues</a>
+      <a href="privacy.html">Privacy</a>
+      <a href="legal.html">Legal</a>
+      <a href="security.html">Security</a>
+      <a href="https://github.com/defcom5-rockchip/pi-desktop">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="wrap">
+    <h1>The Orange Pi 5B, as a desktop computer.<small><span class="version">Pi-Desktop 4.0 "Plaid"</span> — GNOME 50 on Ubuntu 26.04 packages, built with the Armbian framework</small></h1>
+    <p>4K at 120 Hz over HDMI out of the box, a flicker-free desktop, hardware video, Wi-Fi that joins your network, Bluetooth that survives Wi-Fi — and a known-issues file on purpose.</p>
+    <a class="btn" href="https://github.com/defcom5-rockchip/pi-desktop/releases">Download 4.0 Plaid</a>
+    <a class="btn secondary" href="download.html">How to install</a>
+  </div>
+</section>
+
+<main>
+  <div class="wrap">
+    <figure>
+      <div class="placeholder">Screenshot of the Pi-Desktop 4.0 desktop — to be added</div>
+      <figcaption>Pi-Desktop 4.0 on a 32-inch 4K monitor at 120 Hz.</figcaption>
+    </figure>
+
+    <h2>What it is</h2>
+    <p>A GNOME 50 desktop image for the Orange Pi 5B (RK3588S), built from Ubuntu 26.04 packages with the Armbian build framework, on Armbian's Rockchip vendor kernel 6.1.172 plus eleven Pi-Desktop patches. Not affiliated with or endorsed by Canonical or Armbian. Not a Raspberry Pi product.</p>
+    <p>Everything below was checked on an Orange Pi 5B running the release candidate (2026-10-03: 78 of 79 first-boot checks passed; the one miss was a setting the tester had changed himself).</p>
+    <ul class="features">
+      <li><strong>4K at 120 Hz over HDMI.</strong> The vendor kernel reaches HDMI 2.1 FRL with our clock patches; the three ways it failed on the way there (black screens, a hang on screen-off, a black screen after a monitor power-cycle) are fixed by kernel patches, each re-tested on hardware.</li>
+      <li><strong>Flicker-free.</strong> Arm's Mali user-space driver instead of Mesa panfork, and AFBC scanout rejected in the kernel. The Chromium typing and thumbnail flicker of 2.0.x is gone.</li>
+      <li><strong>Hardware video.</strong> Our rockchip-vaapi driver: 8-bit H.264, HEVC and VP9 in Chromium (and Chrome once installed); 10-bit HEVC and VP9 in Firefox once installed; mpv through VA-API, with profiles for DVDs and Blu-rays. AV1 is software.</li>
+      <li><strong>Wi-Fi joins WPA3 and WPA2/WPA3 networks.</strong> A one-branch bug in the vendor Wi-Fi driver refused every modern home network with Ubuntu 26.04's wpa_supplicant; fixed, and sent upstream (armbian/linux-rockchip#561).</li>
+      <li><strong>Bluetooth that survives Wi-Fi.</strong> The AP6275P boot-race and coexistence fixes from 2.0.x, carried over with the self-healing sentinel. The ten-second mute at every YouTube ad on a Bluetooth speaker is gone.</li>
+      <li><strong>Audio.</strong> PipeWire 1.6.9 with real-time priority from boot; the 3.5 mm jack works and follows plugging; Rhythmbox 3.5.1, Audacity, Brasero.</li>
+      <li><strong>Screensaver instead of blanking</strong>, lock on demand, a login screen at every boot after the first.</li>
+      <li><strong>Fixes you would otherwise find yourself.</strong> GUI password prompts that hang on Ubuntu 26.04 with a 6.1 kernel; a large file copy that could get the whole session killed; every board called "pidesktop".</li>
+      <li><strong>Small image, apps on first click.</strong> About 1.5 GB compressed. Firefox, LibreOffice, GIMP, Inkscape, Thunderbird, VSCodium and Google Chrome download from their own repositories on the first click.</li>
+      <li><strong>No snaps. No telemetry of our own.</strong> What the base still talks to is on the <a href="privacy.html">privacy page</a>.</li>
+    </ul>
+
+    <h2>Honest scope</h2>
+    <p>One maintainer, a vendor 6.1 kernel, best effort. It ships a <a href="https://github.com/defcom5-rockchip/pi-desktop/blob/main/KNOWN-ISSUES.md">KNOWN-ISSUES</a> file on purpose — we'd rather tell you what's rough than let you find out. Suspend is disabled. 10-bit video is Firefox-only. HDR on the maintainer's monitor stays pale, and that is the monitor. The board has two display outputs, HDMI 2.1 and DisplayPort over USB-C, nothing else; a passive HDMI-to-DisplayPort adapter cannot work on any computer.</p>
+    <p>Security updates for the Ubuntu packages come from Ubuntu's repositories for the life of 26.04. The kernel and boot packages are built from Armbian's branch and refreshed with Pi-Desktop releases for as long as Armbian builds that branch. Pi-Desktop's own packages are updated with releases. There is no guaranteed support period and no commercial product behind this. The <a href="security.html">security page</a> says how to report a problem.</p>
+
+    <h2>The recipe is public</h2>
+    <p><strong>Built on Armbian, by hook.</strong> Pi-Desktop images are built from pinned Armbian build-framework inputs. Armbian owns the RK3588 boot chain: U-Boot, partition layout, kernel branch, device trees, modules, firmware, board-support packages and the first-boot filesystem resize. Pi-Desktop changes one thing there, eleven kernel patches applied through Armbian's own <code>userpatches</code> mechanism, all published with the source. Everything else is a userspace layer applied through Armbian's late image hook, <code>customize-image.sh</code>, and every line of it is in the recipe repository. The images are credential-free: there is no default user or password, the first boot creates yours.</p>
+    <p>Don't trust the image; audit the recipe.</p>
+    <ul>
+      <li><strong>Recipe</strong> — build config, customize script, overlay, kernel patches, package build scripts: <a href="https://github.com/defcom5-rockchip/pi-desktop-recipe">defcom5-rockchip/pi-desktop-recipe</a>.</li>
+      <li><strong>Kernel</strong> — Armbian's <code>rk-6.1-rkr7.2</code> with the eleven patches applied, tag <code>pi-desktop-4.0</code>: <a href="https://github.com/defcom5-rockchip/linux-rockchip">defcom5-rockchip/linux-rockchip</a>.</li>
+      <li><strong>Video driver</strong> — <a href="https://github.com/defcom5-rockchip/rockchip-vaapi">defcom5-rockchip/rockchip-vaapi</a>.</li>
+    </ul>
+    <p>The <a href="legal.html">legal page</a> has the complete corresponding-source table, the licences and the trademark notes. The 2.0.x line on ubuntu-rockchip was retired at v2.0.2; the <a href="https://github.com/defcom5-rockchip/pi-desktop/blob/main/CHANGELOG.md">changelog</a> has the history.</p>
+  </div>
+</main>
+
+<footer class="site">
+  <div class="wrap">
+    <p>Not affiliated with Canonical, Armbian, Rockchip, Arm, Google, Mozilla, Microsoft or Shenzhen Xunlong.</p>
+    <p>Code GPL-3.0-or-later · artwork CC BY-SA 4.0 · by defcom5-rockchip, with Claude as co-engineer · <a href="https://github.com/defcom5-rockchip/pi-desktop">source of this site</a></p>
+  </div>
+</footer>
+</body>
+</html>

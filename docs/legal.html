@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pi-Desktop — legal notes</title>
+<meta name="description" content="Trademarks and nominative use, the licences of Pi-Desktop's code and artwork, the complete corresponding source for every component, third-party binaries, the warranty disclaimer and the support statement.">
+<link rel="stylesheet" href="style.css">
+<link rel="icon" href="img/pi-desktop.svg" type="image/svg+xml">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <a class="brand" href="index.html"><img src="img/pi-desktop.svg" alt="" width="40" height="40"><span>Pi-Desktop</span></a>
+    <nav>
+      <a href="download.html">Download</a>
+      <a href="https://github.com/defcom5-rockchip/pi-desktop/blob/main/KNOWN-ISSUES.md">Known issues</a>
+      <a href="privacy.html">Privacy</a>
+      <a href="legal.html" aria-current="page">Legal</a>
+      <a href="security.html">Security</a>
+      <a href="https://github.com/defcom5-rockchip/pi-desktop">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <h1>Legal notes</h1>
+    <p class="lede"><strong>This is a summary, not legal advice.</strong> It says what Pi-Desktop is made of, under which terms, and where the source is. If something here is wrong or missing, <a href="https://github.com/defcom5-rockchip/pi-desktop/issues">open an issue</a>.</p>
+
+    <h2>Names and trademarks</h2>
+    <p>Pi-Desktop is an independent project by defcom5-rockchip. It names other projects and companies only to say what it is built from or runs on (nominative use). None of them is affiliated with Pi-Desktop or endorses it.</p>
+    <ul>
+      <li><strong>Ubuntu</strong> is a trademark of Canonical Ltd. Pi-Desktop is built from Ubuntu 26.04 packages and keeps Ubuntu's package identity (<code>ID=ubuntu</code>) so that Ubuntu tooling and PPAs keep working. It is not Ubuntu, and Canonical has not reviewed or approved it.</li>
+      <li><strong>Armbian</strong> is a trademark of the Armbian project. Pi-Desktop is built with the Armbian build framework and uses Armbian's kernel branch and board-support packages as its base. It is not an Armbian image and does not use Armbian's logo.</li>
+      <li><strong>Rockchip</strong> and <strong>RK3588</strong> are marks of Rockchip Electronics Co., Ltd., the maker of the SoC, whose kernel branch, media libraries and boot binaries are used.</li>
+      <li><strong>Arm</strong> and <strong>Mali</strong> are marks of Arm Limited. The image ships Arm's Mali user-space driver under Arm's licence (below). Pi-Desktop does not use Arm's or Mali's marks to promote itself.</li>
+      <li><strong>Orange Pi</strong> is a mark of Shenzhen Xunlong Software Co., Ltd., the maker of the Orange Pi 5B that Pi-Desktop targets. Pi-Desktop is not made or endorsed by Xunlong.</li>
+      <li><strong>Raspberry Pi</strong> is a trademark of Raspberry Pi Ltd. <strong>Pi-Desktop is not a Raspberry Pi product.</strong> It does not run on Raspberry Pi boards and has nothing to do with "Raspberry Pi Desktop".</li>
+      <li><strong>Google Chrome</strong> (Google LLC), <strong>Firefox</strong> and <strong>Thunderbird</strong> (Mozilla Foundation), <strong>LibreOffice</strong> (The Document Foundation), <strong>GIMP</strong>, <strong>Inkscape</strong> and <strong>VSCodium</strong> (their respective projects) are offered as first-click installers that download each program from its own repository. Pi-Desktop does not ship them and uses their names only to label the installer. <strong>VS Code</strong> and <strong>Microsoft</strong> are marks of Microsoft Corporation; VS Code is not offered.</li>
+      <li><strong>Chromium</strong> in the image is the xtradeb team's build of the open-source Chromium browser from their Launchpad PPA.</li>
+      <li><strong>GNOME</strong> is a trademark of the GNOME Foundation. <strong>Linux</strong> is a registered trademark of Linus Torvalds.</li>
+    </ul>
+
+    <h2>How the image is built</h2>
+    <p><strong>Built on Armbian, by hook.</strong> Pi-Desktop images are built from pinned Armbian build-framework inputs. Armbian owns the RK3588 boot chain: U-Boot, partition layout, kernel branch, device trees, modules, firmware, board-support packages and the first-boot filesystem resize. Pi-Desktop changes one thing there, eleven kernel patches applied through Armbian's own <code>userpatches</code> mechanism, all published with the source. Everything else is a userspace layer applied through Armbian's late image hook, <code>customize-image.sh</code>, and every line of it is in the recipe repository. The images are credential-free: there is no default user or password, the first boot creates yours.</p>
+
+    <h2>Licence of Pi-Desktop's own work</h2>
+    <ul>
+      <li><strong>Code</strong> — the recipe (build config, customize script, overlay scripts, systemd units, polkit actions, udev rules), the first-click installers, the screensaver daemon, the Files add-on, the Bluetooth and audio services, and the package build scripts — is <strong>GPL-3.0-or-later</strong> (<a href="https://github.com/defcom5-rockchip/pi-desktop/blob/main/LICENSE">LICENSE</a>). The kernel patches are under the kernel's GPL-2.0-only; a patch to another package is under that package's licence.</li>
+      <li><strong>Artwork</strong> — the Plaid wallpaper, the penguin-drop screensaver video and the script that generates it, the tartan Pi-Desktop logo and the installer icons — is <strong>CC BY-SA 4.0</strong>. Attribution: "Pi-Desktop artwork by defcom5-rockchip, CC BY-SA 4.0".</li>
+      <li>Everything else in the repository is under <a href="https://github.com/defcom5-rockchip/pi-desktop/blob/main/LICENSE">LICENSE</a> unless a file says otherwise.</li>
+    </ul>
+
+    <h2>Complete corresponding source</h2>
+    <p>A Pi-Desktop image is mostly other people's free software. For every copyleft component that Pi-Desktop builds or changes, the complete corresponding source — including the scripts that control compilation and installation — is published at the places below.</p>
+    <div class="table">
+    <table>
+      <thead><tr><th>Component</th><th>In 4.0</th><th>Licence</th><th>Source</th></tr></thead>
+      <tbody>
+        <tr><td>Linux kernel</td><td>6.1.172, Armbian <code>rk-6.1-rkr7.2</code> (armbian/linux-rockchip <code>44bbd021d7808cab93d1f2d64c1f092038257576</code>) plus 11 Pi-Desktop patches</td><td>GPL-2.0-only</td><td>tag <code>pi-desktop-4.0</code> in <a href="https://github.com/defcom5-rockchip/linux-rockchip">defcom5-rockchip/linux-rockchip</a>; the patches, <code>.config</code> fragment and build hooks are also in the recipe</td></tr>
+        <tr><td>U-Boot</td><td>Armbian's build of <a href="https://github.com/radxa/u-boot">radxa/u-boot</a> branch <code>next-dev-v2024.10</code>, commit <code>39cd993e5d6296635438e84f4576b3a9bf76f86e</code>, unmodified by Pi-Desktop (package <code>linux-u-boot-orangepi5b-vendor</code>)</td><td>GPL-2.0-or-later</td><td>that repository and commit; Armbian's build configuration in <a href="https://github.com/armbian/build">armbian/build</a></td></tr>
+        <tr><td>The recipe</td><td>Armbian <code>userpatches/</code>: <code>config-pidesktop3.conf</code>, <code>customize-image.sh</code>, <code>overlay/</code>, <code>kernel/</code>, <code>bootenv/</code>, package build scripts</td><td>GPL-3.0-or-later</td><td><a href="https://github.com/defcom5-rockchip/pi-desktop-recipe">defcom5-rockchip/pi-desktop-recipe</a></td></tr>
+        <tr><td>gnome-control-center</td><td><code>1:50.3-0ubuntu0.2+pd3.3</code> — Ubuntu's source plus one patch (the Screensaver group in Power)</td><td>GPL-2.0-or-later</td><td>Ubuntu source package <code>1:50.3-0ubuntu0.2</code>; <code>pidesktop-power-screensaver.patch</code> and the build script <code>rebuild-settings.sh</code> in the recipe (<code>gcc/</code>)</td></tr>
+        <tr><td>Rhythmbox</td><td><code>3.5.1-1~pd3</code> — the GNOME 3.5.1 release tarball, one patch (prefer the dark theme), one package replacing Ubuntu's split packages</td><td>GPL-2.0-or-later</td><td>the GNOME tarball (SHA-256 recorded), <code>0001-prefer-dark-theme.patch</code> and <code>build-rhythmbox-deb.sh</code> in the recipe (<code>rhythmbox/</code>)</td></tr>
+        <tr><td>PipeWire / WirePlumber</td><td><code>1.6.9-2~pd31</code> / <code>0.5.17-1~pd31</code> — Debian's source packages <code>1.6.9-2</code> and <code>0.5.17-1</code> rebuilt for Ubuntu 26.04 arm64; no code change, one changelog entry</td><td>MIT</td><td>the Debian source packages; the recipe holds the source packages or pointers to them</td></tr>
+        <tr><td>rockchip-vaapi</td><td><code>2.2.0-1~pd3</code> — Pi-Desktop's VA-API driver for the Rockchip video engine</td><td>LGPL-2.1-or-later</td><td><a href="https://github.com/defcom5-rockchip/rockchip-vaapi">defcom5-rockchip/rockchip-vaapi</a></td></tr>
+        <tr><td>librockchip-mpp (Rockchip MPP)</td><td><code>1.5.0+git20260805.a8b19653+ds-0ubuntu1~rk1+pd31</code> — Rockchip MPP snapshot <code>a8b19653</code> (2026-08-05) with the packaging's VP9 presentation-queue fix, rebuilt for 26.04</td><td>Apache-2.0</td><td>source package in the recipe; upstream <a href="https://github.com/rockchip-linux/mpp">rockchip-linux/mpp</a></td></tr>
+        <tr><td>librga</td><td><code>2.2.0+git20260725.26a50ef-0ubuntu1~rk1</code> — librga fork at <code>26a50ef</code>, rebuilt for 26.04</td><td>Apache-2.0</td><td>source package in the recipe</td></tr>
+        <tr><td>libmali-hook shim</td><td>the GPL part of the libmali package (<code>hook/*</code>), patched so Firefox's graphics probe passes (<code>EGL_EXT_device_query</code>)</td><td>GPL-2.0-or-later</td><td><code>0001-libmali-hook-EGL_EXT_device_query-shim-for-Firefox-gfxtest.patch</code> in the recipe (<code>overlay/gpu/</code>); upstream <a href="https://github.com/rockchip-linux/libmali">rockchip-linux/libmali</a></td></tr>
+        <tr><td>Pi-Desktop services and scripts</td><td>screensaver daemon, first-click installers, hostname prompt, OUT1 and headphone-follow services, Bluetooth hciattach/sentinel, Files add-on, os-release keeper</td><td>GPL-3.0-or-later</td><td>the recipe overlay</td></tr>
+        <tr><td>Artwork</td><td>wallpaper, screensaver video and generator, logo, icons</td><td>CC BY-SA 4.0</td><td>the recipe overlay (<code>overlay/pidesktop/backgrounds/</code>, <code>…/screensaver/</code>, <code>…/branding/</code>, the installer icons)</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p>Everything not in the table is an unmodified binary package from Ubuntu 26.04 (<code>ports.ubuntu.com</code>), the <code>xtradeb/apps</code> and <code>mozillateam/ppa</code> PPAs on Launchpad, or Armbian (<code>apt.armbian.com</code>, source at <a href="https://github.com/armbian">github.com/armbian</a>), at the versions listed in the manifest published with each release (also <code>/etc/pi-desktop-manifest.txt</code> in the image). Their source is available from those archives (<code>apt source &lt;package&gt;</code>). If a source package named here is missing from the recipe repository, open an issue and it will be added.</p>
+
+    <h2>Third-party binary components</h2>
+    <div class="table">
+    <table>
+      <thead><tr><th>Component</th><th>What it is</th><th>Terms</th></tr></thead>
+      <tbody>
+        <tr><td>Arm Mali user-space driver</td><td><code>libmali-valhall-g610-g24p0-wayland-gbm</code> 1.9-1: Rockchip's packaging of Arm's proprietary graphics libraries (OpenGL ES, EGL, Vulkan) for the Mali-G610, plus a GPL-2+ hook library</td><td>Arm's End User Licence Agreement for the Mali userspace driver (LES-PRE-20769, 25 November 2015), reproduced in <code>/usr/share/doc/libmali-valhall-g610-g24p0-wayland-gbm/copyright</code> in the image. It allows redistribution with the notices intact and grants no right to use Arm's marks. The driver itself is binary-only; the hook source is at <a href="https://github.com/rockchip-linux/libmali">rockchip-linux/libmali</a>.</td></tr>
+        <tr><td>Rockchip boot binaries</td><td>the DDR-initialisation blob and the BL31 (Arm Trusted Firmware) binary embedded in <code>idbloader.img</code> and <code>u-boot.itb</code>, from Rockchip's <code>rkbin</code>, as bundled by Armbian's U-Boot package</td><td>Rockchip's terms in <a href="https://github.com/rockchip-linux/rkbin">rockchip-linux/rkbin</a> (binary redistribution).</td></tr>
+        <tr><td>Radio and GPU firmware</td><td>package <code>armbian-firmware</code> 26.11.0-trunk — Armbian's bundle of vendor firmware for many boards (Broadcom/Cypress/Infineon, Realtek and others). On the Orange Pi 5B the files in use are the AP6275P Wi-Fi/Bluetooth firmware (<code>fw_bcm43752a2_pcie_ag.bin</code>, <code>clm_bcm43752a2_pcie_ag.blob</code>, <code>nvram_AP6275P.txt</code>, <code>BCM4362A2.hcd</code>) and Arm's Mali CSF firmware (<code>mali_csffw.bin</code>)</td><td>Each file under its vendor's redistribution terms. The package ships no licence texts — inherited from Armbian, same as every Armbian image. Pi-Desktop appends three Bluetooth-coexistence parameters to the AP6275P NVRAM text file (diverted, so firmware updates keep them).</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <h2>No warranty</h2>
+    <p>Pi-Desktop is distributed under the GNU General Public License, which says (version 3, section 15):</p>
+    <blockquote>THERE IS NO WARRANTY FOR THE PROGRAM, TO THE EXTENT PERMITTED BY APPLICABLE LAW. EXCEPT WHEN OTHERWISE STATED IN WRITING THE COPYRIGHT HOLDERS AND/OR OTHER PARTIES PROVIDE THE PROGRAM "AS IS" WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE. THE ENTIRE RISK AS TO THE QUALITY AND PERFORMANCE OF THE PROGRAM IS WITH YOU. SHOULD THE PROGRAM PROVE DEFECTIVE, YOU ASSUME THE COST OF ALL NECESSARY SERVICING, REPAIR OR CORRECTION.</blockquote>
+    <p>Section 16 (Limitation of Liability) applies likewise; the full text is in <a href="https://github.com/defcom5-rockchip/pi-desktop/blob/main/LICENSE">LICENSE</a>. The same holds for the image as a whole, to the extent the law allows. Flashing an image can destroy the data on the target device; read <a href="https://github.com/defcom5-rockchip/pi-desktop/blob/main/EMMC-INSTALL.md">EMMC-INSTALL.md</a> before writing to eMMC.</p>
+
+    <h2>Support</h2>
+    <p>Pi-Desktop has one maintainer and is maintained on a best-effort basis. Security updates for the Ubuntu packages come from Ubuntu's repositories for the life of Ubuntu 26.04. The kernel, device tree, bootloader and board-support packages are built from Armbian's branch, held in the image, and refreshed with Pi-Desktop releases for as long as Armbian builds that branch. Pi-Desktop's own packages are updated with releases. There is no guaranteed support period and this is not a commercial product. Problems: <a href="https://github.com/defcom5-rockchip/pi-desktop/issues">issues</a>; security problems: the <a href="security.html">security page</a>.</p>
+    <p>The same text is kept as <a href="https://github.com/defcom5-rockchip/pi-desktop/blob/main/LEGAL.md">LEGAL.md</a> in the repository.</p>
+  </div>
+</main>
+
+<footer class="site">
+  <div class="wrap">
+    <p>Not affiliated with Canonical, Armbian, Rockchip, Arm, Google, Mozilla, Microsoft or Shenzhen Xunlong.</p>
+    <p>Code GPL-3.0-or-later · artwork CC BY-SA 4.0 · by defcom5-rockchip, with Claude as co-engineer · <a href="https://github.com/defcom5-rockchip/pi-desktop">source of this site</a></p>
+  </div>
+</footer>
+</body>
+</html>

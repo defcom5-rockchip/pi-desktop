@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pi-Desktop — privacy</title>
+<meta name="description" content="What the Pi-Desktop image sends over the network and what it does not. No telemetry of its own, no accounts, no data collected by the maintainer.">
+<link rel="stylesheet" href="style.css">
+<link rel="icon" href="img/pi-desktop.svg" type="image/svg+xml">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <a class="brand" href="index.html"><img src="img/pi-desktop.svg" alt="" width="40" height="40"><span>Pi-Desktop</span></a>
+    <nav>
+      <a href="download.html">Download</a>
+      <a href="https://github.com/defcom5-rockchip/pi-desktop/blob/main/KNOWN-ISSUES.md">Known issues</a>
+      <a href="privacy.html" aria-current="page">Privacy</a>
+      <a href="legal.html">Legal</a>
+      <a href="security.html">Security</a>
+      <a href="https://github.com/defcom5-rockchip/pi-desktop">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <h1>Privacy</h1>
+    <p class="lede">Pi-Desktop collects nothing. There is no account, no telemetry of its own, no crash uploader of its own, and nothing is sent to the maintainer. The image's privacy-policy link (<code>PRIVACY_POLICY_URL</code> in <code>/etc/os-release</code>) points at this page.</p>
+    <p>What follows is what the image <em>does</em> send, by whom, and why, so you can judge it. It was checked on the 4.0 release candidate (test9) on 2026-10-03 by reading the installed configuration and services, not by assuming.</p>
+
+    <h2>What contacts the network by default</h2>
+    <div class="table">
+    <table>
+      <thead><tr><th>When</th><th>What</th><th>Where</th><th>Why</th></tr></thead>
+      <tbody>
+        <tr><td>First login (once)</td><td>Armbian's setup wizard (<code>armbian-firstlogin</code>), Armbian code</td><td><code>ipinfo.io</code> (learns your public IP), then <code>ipwhois.app</code> (looks that IP up)</td><td>to suggest your time zone and locale. 5-second timeout; skipped when there is no network. Pi-Desktop's own addition to the wizard — the computer-name question — is local.</td></tr>
+        <tr><td>Boot, then continuously</td><td>chrony (NTP)</td><td><code>1.ntp.ubuntu.com</code> … <code>4.ntp.ubuntu.com</code> with NTS, <code>ntp-bootstrap.ubuntu.com</code></td><td>clock sync. Ubuntu's defaults.</td></tr>
+        <tr><td>Daily</td><td>apt (<code>apt-daily</code> timers, <code>unattended-upgrades</code>)</td><td><code>ports.ubuntu.com</code> (Ubuntu), <code>apt.armbian.com</code> (Armbian), <code>ppa.launchpadcontent.net</code> (the xtradeb/apps and mozillateam PPAs) — and, once you have installed them, <code>dl.google.com</code> (Chrome) and <code>download.vscodium.com</code> (VSCodium)</td><td>package lists; <code>unattended-upgrades</code> installs Ubuntu security updates on its own. The held kernel and boot packages are not touched.</td></tr>
+        <tr><td>In the background</td><td>GNOME Software (PackageKit)</td><td>the same apt sources</td><td>checks for and downloads updates (<code>download-updates</code> is on). Ratings (ODRS) are off. No Flatpak remotes are configured, so Flathub is not contacted.</td></tr>
+        <tr><td>Daily</td><td><code>fwupd-refresh.timer</code></td><td><code>cdn.fwupd.org</code> (LVFS)</td><td>downloads the firmware catalogue. Nothing on this board is updated through it.</td></tr>
+        <tr><td>Daily</td><td>Armbian's <code>armbian-quotes</code> cron job</td><td><code>github.armbian.com/quotes.txt</code></td><td>fetches the quotes shown in the terminal message of the day.</td></tr>
+        <tr><td>On the local network</td><td>Avahi (mDNS)</td><td>your LAN only</td><td><code>.local</code> names.</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <h2>What does not phone home</h2>
+    <ul>
+      <li><strong>Crash reports.</strong> Ubuntu's crash collector <code>apport</code> is installed and running; it writes crash data to <code>/var/crash</code> on the device. Nothing is uploaded: the GNOME crash dialog (<code>apport-gtk</code>) is not installed, "Send error reports to Canonical" is off, automatic reporting is off, and the uploader (<code>whoopsie</code>) sat inactive with no reports on the test system.</li>
+      <li><strong>Location.</strong> <code>geoclue</code> is installed but only runs when an application asks. GNOME's Location Services and Automatic Time Zone are off by default; submission of Wi-Fi scan data is off.</li>
+      <li><strong>Online accounts.</strong> GNOME Online Accounts is installed and contacts a provider only when you add one.</li>
+      <li><strong>Not installed:</strong> <code>popularity-contest</code>, <code>ubuntu-report</code>, the Ubuntu Pro client, <code>snapd</code>, Armbian's <code>armbian-config</code>. Ubuntu's message-of-the-day news fetch (<code>motd-news</code>) is disabled. Armbian's daily <code>armbian-apt-updates</code> job only simulates an upgrade locally.</li>
+      <li><strong>Pi-Desktop's own services</strong> — the screensaver, the Bluetooth sentinel, the hostname prompt, the headphone-follow and OUT1 services, the login-screen service, the os-release keeper — do not use the network.</li>
+    </ul>
+
+    <h2>Browsers and the apps you install</h2>
+    <ul>
+      <li><strong>Chromium</strong> (xtradeb's build) is upstream Chromium and has Chromium's own network behaviour: Safe Browsing, component updates, Google sign-in through the API keys Debian's packaging carries. Google's privacy policy governs the Google services it talks to. Pi-Desktop adds only the hardware-video flags; Debian's defaults include <code>--disable-pings</code>.</li>
+      <li><strong>The first-click installers</strong> each contact one place: Google Chrome → <code>dl.google.com</code> (the signing key, checked against a pinned fingerprint, and the package; Google's apt repository then stays configured so Chrome updates from Google); VSCodium → <code>gitlab.com</code> (the repository key, pinned fingerprint) and <code>download.vscodium.com</code>; Firefox and Thunderbird → the Mozilla Team PPA on <code>ppa.launchpadcontent.net</code>; LibreOffice, GIMP and Inkscape → <code>ports.ubuntu.com</code>. The installer logs to <code>/var/log/pidesktop-install-app.log</code> on the device.</li>
+      <li><strong>Once installed, those apps have their own policies:</strong> Google (Chrome), Mozilla (Firefox, Thunderbird), the VSCodium project (VSCodium is VS Code with Microsoft's telemetry removed), The Document Foundation, GIMP, Inkscape. Pi-Desktop ships a Firefox enterprise-policy file that turns off Firefox telemetry, studies, Pocket and the first-run pages.</li>
+    </ul>
+
+    <h2>The website and the issue tracker</h2>
+    <p>The website is GitHub Pages; the issue tracker is GitHub. GitHub's privacy statement applies to both. The website itself has no analytics, no cookies, no scripts and no third-party fonts. The maintainer keeps no list of users and no data about them.</p>
+
+    <h2>Changes</h2>
+    <p>If a later release changes any of this, this page changes with it and the <a href="https://github.com/defcom5-rockchip/pi-desktop/blob/main/CHANGELOG.md">changelog</a> says so. The same text is kept as <a href="https://github.com/defcom5-rockchip/pi-desktop/blob/main/PRIVACY.md">PRIVACY.md</a> in the repository.</p>
+  </div>
+</main>
+
+<footer class="site">
+  <div class="wrap">
+    <p>Not affiliated with Canonical, Armbian, Rockchip, Arm, Google, Mozilla, Microsoft or Shenzhen Xunlong.</p>
+    <p>Code GPL-3.0-or-later · artwork CC BY-SA 4.0 · by defcom5-rockchip, with Claude as co-engineer · <a href="https://github.com/defcom5-rockchip/pi-desktop">source of this site</a></p>
+  </div>
+</footer>
+</body>
+</html>
