@@ -53,6 +53,9 @@ one fail was a setting the tester had changed). Image about 1.5 GB compressed.
 ### Video
 - rockchip-vaapi 2.2.0, MPP snapshot `a8b19653` (2026-08-05) and librga `26a50ef` rebuilt for 26.04; codec and
   2D-engine device nodes opened to group `video` (root-only on an Armbian rootfs).
+- **10-bit HEVC decodes on the video engine in Chromium** (measured on the release image 2026-10-03: 4K Main 10,
+  595 frames, 0 dropped, ~21 % CPU across its processes). Firefox 156 falls back to software for 10-bit on this
+  build — the reverse of 2.0.x; see KNOWN-ISSUES VID-5.
 - Chromium 154 (xtradeb) is the default browser, with VA-API flags and a render-node override (the NPU registers as
   a second render node and Chromium picked it).
 - mpv 0.41: `video-sync=display-resample` for files; audio-sync (plus deinterlace for DVD) profiles for DVD and

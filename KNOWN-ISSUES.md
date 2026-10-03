@@ -21,24 +21,31 @@ Shut down, or let the screensaver run.
 
 ---
 
-### VID-5: 10-bit video is hardware-decoded in Firefox only; Chromium and Chrome do 8-bit
+### VID-5: 10-bit video is hardware-decoded in Chromium, software in Firefox
 
-**Status:** GPU-driver limits, split by browser · **Severity:** performance · **Affects:** 10-bit files
+**Status:** measured on the 4.0 release image, 2026-10-03 · **Severity:** performance · **Affects:** 10-bit files
 
-Arm's Mali driver is what makes the desktop flicker-free, and it draws the line here:
+This is the reverse of what 2.0.x did, so it is worth stating with the numbers. A 4K HEVC **Main 10** file, played
+full-screen for 20 s on the release image (driver 2.2.0):
 
-- **Chromium and Chrome** (the 8-bit path): H.264, HEVC and VP9 at 8 bit decode on the video engine
-  (8-bit HEVC measured on this image; 10-bit VP9 was measured with the same driver on the 2.0.x stack
-  and has not been re-measured here). HEVC Main10 is never attempted in hardware — Chromium's own
-  policy on Linux.
-- **Firefox** (the 10-bit path, once installed from its placeholder): runs on the GPU and decodes 10-bit
-  HEVC and VP9 Profile 2 in hardware, zero-copy. Its 8-bit video is **software**-decoded: the Mali
-  driver has no two-channel 8-bit import format, so the driver's 8-bit frames cannot be handed to it.
-- **mpv** plays through VA-API.
-- **AV1** is software everywhere; no browser path reaches the chip's AV1 block (see VID-2 below).
+| | Chromium 154 (in the image) | Firefox 156 (first-click install) |
+|---|---|---|
+| frames decoded / dropped | **595 / 0** | 571 / **26** |
+| CPU | **~21 % across its processes** | 229 % + 121 % |
+| video engine in use | **yes** | no |
 
-Rule of thumb: everyday web video → Chromium or Chrome; 10-bit files and 10-bit Jellyfin → Firefox or
-mpv. HDR files look pale in Firefox, which does no HDR tone mapping on Linux.
+- **Chromium and Chrome decode 10-bit HEVC on the video engine.** So does 8-bit HEVC, H.264 and VP9. Jellyfin's web
+  client direct-plays 4K Main 10 in Chromium with no server transcode — nothing to install, it is the default browser.
+- **Firefox 156 decodes 10-bit in software.** Its own log says `IsHardwareAccelerated=false` → "Using preferred
+  software codec hevc", then drops frames. The VA-API support is compiled in and libva is installed, so something in
+  this build or in Firefox 156 refuses the path that Firefox 155 took on 2.0.x. Under investigation; use Chromium for
+  video until it is fixed.
+- **AV1** is software in both; the chip's AV1 block has no browser path. Firefox has AV1 switched off on purpose so
+  YouTube serves VP9, which is hardware-decoded.
+- **HDR** files play but look pale in both browsers: neither does HDR tone mapping on Linux (DSP-2). mpv is the HDR
+  player.
+
+Evidence, including the test clip and the decoder log, is kept with the project notes.
 
 ---
 

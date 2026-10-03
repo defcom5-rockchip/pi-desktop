@@ -23,10 +23,12 @@ first-boot checks passed; the one miss was a setting the tester had changed hims
   0008, 0010 and 0011, each re-tested on hardware. One boot argument hides 120 Hz again; 4K@60 needs none of this.
 - **A flicker-free desktop and browser.** Arm's Mali user-space driver instead of Mesa panfork, and AFBC scanout
   rejected in the kernel (patch 0001). The Chromium typing and thumbnail flicker of 2.0.x is gone.
-- **Hardware video.** Our [rockchip-vaapi](https://github.com/defcom5-rockchip/rockchip-vaapi) driver, 2.2.0:
-  8-bit H.264, HEVC and VP9 in Chromium (and in Chrome once installed); 10-bit HEVC and VP9 in Firefox once
-  installed; mpv 0.41 through VA-API, with profiles that keep DVDs and Blu-rays from stuttering at 120 Hz.
-  AV1 is software.
+- **Hardware video, including 10-bit, in the browser that ships with it.** Our
+  [rockchip-vaapi](https://github.com/defcom5-rockchip/rockchip-vaapi) driver, 2.2.0. Measured on this image:
+  Chromium 154 decodes a 4K HEVC **Main 10** file on the video engine — 595 frames, none dropped, about 10 % of the
+  CPU — so Jellyfin direct-plays 10-bit without transcoding, out of the box. H.264, 8-bit HEVC and VP9 likewise.
+  Firefox 156 decodes 10-bit in **software** on this build and is the wrong choice for 4K video (VID-5). mpv 0.41
+  goes through VA-API, with profiles that keep DVDs and Blu-rays from stuttering at 120 Hz. AV1 is software.
 - **Wi-Fi joins WPA3 and WPA2/WPA3 networks.** Ubuntu 26.04's wpa_supplicant signals WPA3 in a way the vendor
   Wi-Fi driver never handled, so every modern home network refused the board. Patch 0006 fixes the driver
   ([armbian/linux-rockchip#561](https://github.com/armbian/linux-rockchip/pull/561)); Wi-Fi 6 rates measured on 5 GHz.
@@ -56,7 +58,7 @@ first-boot checks passed; the one miss was a setting the tester had changed hims
 ## Honest scope
 
 One maintainer, a vendor 6.1 kernel, best effort. It ships a [KNOWN-ISSUES](KNOWN-ISSUES.md) file on purpose —
-we'd rather tell you what's rough than let you find out. Suspend is disabled. 10-bit video is Firefox-only.
+we'd rather tell you what's rough than let you find out. Suspend is disabled. 10-bit video is hardware-decoded in Chromium, software in Firefox.
 HDR on the maintainer's monitor stays pale, and that is the monitor. The board has two display outputs, HDMI 2.1
 and DisplayPort over USB-C, nothing else; a passive HDMI-to-DisplayPort adapter cannot work on any computer
 ([DSP-1](KNOWN-ISSUES.md#dsp-1-two-display-outputs-a-passive-hdmi-to-displayport-adapter-cannot-work)).

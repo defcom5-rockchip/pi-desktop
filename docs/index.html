@@ -45,7 +45,7 @@
     <ul class="features">
       <li><strong>4K at 120 Hz over HDMI.</strong> The vendor kernel reaches HDMI 2.1 FRL with our clock patches; the three ways it failed on the way there (black screens, a hang on screen-off, a black screen after a monitor power-cycle) are fixed by kernel patches, each re-tested on hardware.</li>
       <li><strong>Flicker-free.</strong> Arm's Mali user-space driver instead of Mesa panfork, and AFBC scanout rejected in the kernel. The Chromium typing and thumbnail flicker of 2.0.x is gone.</li>
-      <li><strong>Hardware video.</strong> Our rockchip-vaapi driver: 8-bit H.264, HEVC and VP9 in Chromium (and Chrome once installed); 10-bit HEVC and VP9 in Firefox once installed; mpv through VA-API, with profiles for DVDs and Blu-rays. AV1 is software.</li>
+      <li><strong>Hardware video, 10-bit included, in the browser that ships with it.</strong> Our rockchip-vaapi driver 2.2.0. Measured on this image: Chromium decodes a 4K HEVC Main 10 file on the video engine — 595 frames, none dropped, about 10% of the CPU — so Jellyfin direct-plays 10-bit with no server transcode, out of the box. Firefox decodes 10-bit in software on this build. mpv goes through VA-API, with profiles for DVDs and Blu-rays. AV1 is software.</li>
       <li><strong>Wi-Fi joins WPA3 and WPA2/WPA3 networks.</strong> A one-branch bug in the vendor Wi-Fi driver refused every modern home network with Ubuntu 26.04's wpa_supplicant; fixed, and sent upstream (armbian/linux-rockchip#561).</li>
       <li><strong>Bluetooth that survives Wi-Fi.</strong> The AP6275P boot-race and coexistence fixes from 2.0.x, carried over with the self-healing sentinel. The ten-second mute at every YouTube ad on a Bluetooth speaker is gone.</li>
       <li><strong>Audio.</strong> PipeWire 1.6.9 with real-time priority from boot; the 3.5 mm jack works and follows plugging; Rhythmbox 3.5.1, Audacity, Brasero.</li>
@@ -56,7 +56,7 @@
     </ul>
 
     <h2>Honest scope</h2>
-    <p>One maintainer, a vendor 6.1 kernel, best effort. It ships a <a href="https://github.com/defcom5-rockchip/pi-desktop/blob/main/KNOWN-ISSUES.md">KNOWN-ISSUES</a> file on purpose — we'd rather tell you what's rough than let you find out. Suspend is disabled. 10-bit video is Firefox-only. HDR on the maintainer's monitor stays pale, and that is the monitor. The board has two display outputs, HDMI 2.1 and DisplayPort over USB-C, nothing else; a passive HDMI-to-DisplayPort adapter cannot work on any computer.</p>
+    <p>One maintainer, a vendor 6.1 kernel, best effort. It ships a <a href="https://github.com/defcom5-rockchip/pi-desktop/blob/main/KNOWN-ISSUES.md">KNOWN-ISSUES</a> file on purpose — we'd rather tell you what's rough than let you find out. Suspend is disabled. 10-bit video is hardware-decoded in Chromium, software in Firefox. HDR on the maintainer's monitor stays pale, and that is the monitor. The board has two display outputs, HDMI 2.1 and DisplayPort over USB-C, nothing else; a passive HDMI-to-DisplayPort adapter cannot work on any computer.</p>
     <p>Security updates for the Ubuntu packages come from Ubuntu's repositories for the life of 26.04. The kernel and boot packages are built from Armbian's branch and refreshed with Pi-Desktop releases for as long as Armbian builds that branch. Pi-Desktop's own packages are updated with releases. There is no guaranteed support period and no commercial product behind this. The <a href="security.html">security page</a> says how to report a problem.</p>
 
     <h2>The recipe is public</h2>
