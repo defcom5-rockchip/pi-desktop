@@ -47,7 +47,7 @@
 
     <h2>What does not phone home</h2>
     <ul>
-      <li><strong>Crash reports.</strong> Ubuntu's crash collector <code>apport</code> is installed and running; it writes crash data to <code>/var/crash</code> on the device. Nothing is uploaded: the GNOME crash dialog (<code>apport-gtk</code>) is not installed, "Send error reports to Canonical" is off, automatic reporting is off, and the uploader (<code>whoopsie</code>) sat inactive with no reports on the test system.</li>
+      <li><strong>Crash reports.</strong> Ubuntu's crash collector <code>apport</code> is installed and running; it writes crash data to <code>/var/crash</code> on the device. Nothing is uploaded: the GNOME crash dialog (<code>apport-gtk</code>) is not installed, "Send error reports to Canonical" is off, automatic reporting is off, and the uploader (<code>whoopsie</code>) is switched off twice — its systemd units are masked and <code>report_crashes=false</code> is set. It cannot be removed outright because Settings (gnome-control-center) depends on its preferences helper.</li>
       <li><strong>Location.</strong> <code>geoclue</code> is installed but only runs when an application asks. GNOME's Location Services and Automatic Time Zone are off by default; submission of Wi-Fi scan data is off.</li>
       <li><strong>Online accounts.</strong> GNOME Online Accounts is installed and contacts a provider only when you add one.</li>
       <li><strong>Not installed:</strong> <code>popularity-contest</code>, <code>ubuntu-report</code>, the Ubuntu Pro client, <code>snapd</code>, Armbian's <code>armbian-config</code>. Ubuntu's message-of-the-day news fetch (<code>motd-news</code>) is disabled. Armbian's daily <code>armbian-apt-updates</code> job only simulates an upgrade locally.</li>

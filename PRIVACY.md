@@ -23,8 +23,9 @@ release candidate (test9) on 2026-10-03 by reading the installed configuration a
 
 - **Crash reports.** Ubuntu's crash collector `apport` is installed and running; it writes crash data to
   `/var/crash` on the device. Nothing is uploaded: the GNOME crash dialog (`apport-gtk`) is not installed,
-  "Send error reports to Canonical" is off, automatic reporting is off, and the uploader (`whoopsie`) sat
-  inactive with no reports on the test system.
+  "Send error reports to Canonical" is off, automatic reporting is off, and the uploader (`whoopsie`) is
+  switched off twice — its systemd units are masked and `report_crashes=false` is set. It cannot be removed
+  outright because Settings (gnome-control-center) depends on its preferences helper.
 - **Location.** `geoclue` is installed but only runs when an application asks. GNOME's Location Services and
   Automatic Time Zone are off by default; submission of Wi-Fi scan data is off.
 - **Online accounts.** GNOME Online Accounts is installed and contacts a provider only when you add one.
