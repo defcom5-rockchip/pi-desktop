@@ -32,6 +32,9 @@ release candidate (test9) on 2026-10-03 by reading the installed configuration a
 - **Not installed:** `popularity-contest`, `ubuntu-report`, the Ubuntu Pro client, `snapd`, Armbian's
   `armbian-config`. Ubuntu's message-of-the-day news fetch (`motd-news`) is disabled. Armbian's daily
   `armbian-apt-updates` job only simulates an upgrade locally.
+- **The login banner.** Armbian's message-of-the-day scripts include one that fetches your public address from
+  `ipv4.whatismyip.akamai.com` at every console or SSH login. Pi-Desktop switches that part off (`MOTD_DISABLE`),
+  together with the rest of Armbian's banner; only a one-line Pi-Desktop header and the pending-updates notice remain.
 - **Pi-Desktop's own services** — the screensaver, the Bluetooth sentinel, the hostname prompt, the
   headphone-follow and OUT1 services, the login-screen service, the os-release keeper — do not use the network.
 

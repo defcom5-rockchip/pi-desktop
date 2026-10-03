@@ -51,6 +51,7 @@
       <li><strong>Location.</strong> <code>geoclue</code> is installed but only runs when an application asks. GNOME's Location Services and Automatic Time Zone are off by default; submission of Wi-Fi scan data is off.</li>
       <li><strong>Online accounts.</strong> GNOME Online Accounts is installed and contacts a provider only when you add one.</li>
       <li><strong>Not installed:</strong> <code>popularity-contest</code>, <code>ubuntu-report</code>, the Ubuntu Pro client, <code>snapd</code>, Armbian's <code>armbian-config</code>. Ubuntu's message-of-the-day news fetch (<code>motd-news</code>) is disabled. Armbian's daily <code>armbian-apt-updates</code> job only simulates an upgrade locally.</li>
+      <li><strong>The login banner.</strong> Armbian's message-of-the-day scripts include one that fetches your public address from <code>ipv4.whatismyip.akamai.com</code> at every console or SSH login. Pi-Desktop switches that part off (<code>MOTD_DISABLE</code>), together with the rest of Armbian's banner; only a one-line Pi-Desktop header and the pending-updates notice remain.</li>
       <li><strong>Pi-Desktop's own services</strong> — the screensaver, the Bluetooth sentinel, the hostname prompt, the headphone-follow and OUT1 services, the login-screen service, the os-release keeper — do not use the network.</li>
     </ul>
 
