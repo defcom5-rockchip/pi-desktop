@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pi-Desktop — 10-bit VP9 frame loss on RK3588</title>
+<meta name="description" content="Measured: the MPP video library bundled with jellyfin-ffmpeg silently drops about 30% of a long 10-bit VP9 transcode on RK3588. One reverted line, the numbers, and a ten-minute reproduction.">
+<link rel="stylesheet" href="style.css">
+<link rel="icon" href="img/pi-desktop.svg" type="image/svg+xml">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <a class="brand" href="index.html"><img src="img/pi-desktop.svg" alt="" width="40" height="40"><span>Pi-Desktop</span></a>
+    <nav>
+      <a href="download.html">Download</a>
+      <a href="https://github.com/defcom5-rockchip/pi-desktop/blob/main/KNOWN-ISSUES.md">Known issues</a>
+      <a href="privacy.html">Privacy</a>
+      <a href="legal.html">Legal</a>
+      <a href="security.html">Security</a>
+      <a href="https://github.com/defcom5-rockchip/pi-desktop">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <h1>10-bit VP9 frame loss on RK3588</h1>
+    <p class="lede">The MPP video library bundled with <code>jellyfin-ffmpeg</code> silently drops about 30&nbsp;% of a long 10-bit VP9 transcode on RK3588 boards. One reverted line causes it. Measured 3 October 2026 on an Orange Pi 5B; nobody outside this bench has reproduced it yet, and that is the thing this page is asking for.</p>
+
+    <figure>
+      <img src="img/vp9-10bit-ours-vs-theirs.png" alt="Bar chart: frames missing per five minutes of a 100-minute 4K 10-bit VP9 title. Jellyfin's bundled library loses nothing for the first forty minutes, then 3,000 to 4,400 frames of every 7,200 for the rest of the title. An upstream-lineage library loses none at any point." width="1600" height="900" loading="lazy">
+      <figcaption>Same board, same 100-minute 4K 10-bit VP9 title, same afternoon. Orange, Jellyfin's bundled MPP: 100,131 frames of 143,641. Green, an upstream-lineage MPP: all of them.</figcaption>
+    </figure>
+
+    <h2>What a user sees</h2>
+    <p>A long title transcodes perfectly for about forty minutes, then starts freezing for up to six seconds at a time, repeatedly, for the rest of playback. Nothing appears in the Jellyfin log. <code>ffmpeg</code> reports no errors and exits cleanly. The container's timestamps still span the full runtime, so the player shows the correct duration with holes in it. It looks exactly like a bad file or a failing disk.</p>
+    <p>Underneath, the video decoder is faulting and the kernel is resetting it hundreds of times a minute. Frames decoded during each reset are never produced, and nothing in the API says so.</p>
+
+    <h2>The cause: one reverted line</h2>
+    <p>Rockchip disabled parallel VP9 decode for the RK3588 upstream in August 2023, in <code>hal_vp9d</code>. The fork of MPP that <code>jellyfin-ffmpeg</code> builds from reverts that guard:</p>
+<pre><code>         cfg-&gt;support_fast_mode = 1;
+         if (mpp_get_soc_type() == ROCKCHIP_SOC_RK3588)
+-            cfg-&gt;support_fast_mode = 0;      <span style="opacity:.75">// upstream: one decode task at a time</span>
++            cfg-&gt;cfg-&gt;status.hal_task_count = 2;  <span style="opacity:.75">// fork: two, across both decoder cores</span>
+</code></pre>
+    <p>That is the only behavioural change to the VP9 decoder among the eleven commits the fork carries above upstream. <code>jellyfin-ffmpeg</code> pins it in <code>builder/scripts.d/50-rkmpp.sh</code>, identically on 7.1.4-3 and every 8.x release including the current one.</p>
+
+    <h2>The guard is VP9-specific on purpose</h2>
+    <p>Worth stating, because it rules out the obvious alternative — that the chip simply cannot decode two things at once. It can, for HEVC. Every H.265 path in MPP enables parallel decode on this SoC with <strong>no exception</strong>, in both upstream and the fork. VP9 is the only codec Rockchip guards here. The measurements agree: HEVC Main 10 ran 70,464 frames clean, zero resets, on the very library that fails on VP9 at around 65,000.</p>
+
+    <h2>Measurements</h2>
+    <div class="table">
+    <table>
+      <tr><th>Decoder path</th><th>Input</th><th>Frames out / in</th><th>Resets</th><th>What ffmpeg said</th></tr>
+      <tr><td><code>jellyfin-ffmpeg</code> 8.1.3-1, bundled MPP</td><td>synthetic 1080p60 VP9 Profile 2, 72,600 frames</td><td><strong>71,382 / 72,600</strong></td><td>70</td><td>“0 decode errors”, exit 0</td></tr>
+      <tr><td>system ffmpeg → VA-API → upstream-lineage MPP</td><td>the same clip</td><td>72,600 / 72,600</td><td>0</td><td>clean, exit 0</td></tr>
+      <tr><td><code>jellyfin-ffmpeg</code> 8.1.3-1, full pipeline to a file</td><td>real 4K24 VP9 Profile 2 title, 143,641 frames</td><td><strong>100,131 / 143,641</strong></td><td>11,520</td><td>0 error lines, exit 0</td></tr>
+      <tr><td>system ffmpeg → VA-API → upstream-lineage MPP</td><td>the same title</td><td>143,641 / 143,641</td><td>0</td><td>clean, exit 0</td></tr>
+    </table>
+    </div>
+    <p>All on one Orange Pi 5B, RK3588S, Armbian vendor kernel 6.1.172, both decoder cores verified evenly loaded. The failure begins after roughly 65,000 frames in a single job: about 18 minutes at 60&nbsp;fps, about 45 at 24. Short items never reach it, because every job starts a fresh decoder.</p>
+    <p>The synthetic clip matters: it is a <code>testsrc2</code> pattern at 1080p, so the trigger is the number of frames decoded in one session — not 4K, not HDR metadata, not any particular file.</p>
+
+    <h2>Not affected</h2>
+    <p>HEVC Main 10, 8-bit H.264 and VP9, direct play (which never touches the server's decoder), and anything short. VP9 Profile 2 sources are mostly YouTube-origin HDR downloads, which is why libraries rarely hit this and why it looks like a bad file when they do.</p>
+
+    <h2>Reproduce it in ten minutes</h2>
+    <p>Any RK3588 board with <code>jellyfin-ffmpeg</code> and a 10-bit VP9 file longer than about 20 minutes. To make one:</p>
+<pre><code>ffmpeg -f lavfi -i "testsrc2=size=1920x1080:rate=60:duration=1210,format=yuv420p10le" \
+       -c:v libvpx-vp9 -profile:v 2 -pix_fmt yuv420p10le -deadline realtime \
+       -cpu-used 8 -row-mt 1 -b:v 1500k test.webm</code></pre>
+    <p>Then watch the kernel while it decodes:</p>
+<pre><code>sudo journalctl -k --since now -f | grep --line-buffered 'resetting for err' &amp;
+/usr/lib/jellyfin-ffmpeg/ffmpeg -c:v vp9_rkmpp -i test.webm -an -f null -</code></pre>
+    <p>Compare the final <code>frame=</code> against the file's real frame count (<code>ffprobe -count_packets -select_streams v:0 -show_entries stream=nb_read_packets test.webm</code>). On an affected build the resets begin partway through and the count comes up short. On an unaffected MPP the numbers match and nothing is printed.</p>
+    <p class="note"><strong>A negative result is just as useful.</strong> If your board stays silent and the frame counts match, please say so — everything on this page was measured on one bench, by one person, and that is its main weakness.</p>
+
+    <h2>Fix and workaround</h2>
+    <ul>
+      <li><strong>Fix:</strong> drop the revert, restoring <code>support_fast_mode = 0</code> for RK3588. Measured cost on a real title: about 106&nbsp;fps instead of 120, because one decode task runs at a time. A rebuilt library with only that change decoded 116,787 frames with zero resets.</li>
+      <li><strong>Workaround without rebuilding:</strong> <code>echo 1 &gt; /proc/mpp_service/rkvdec-core1/disable_work</code> — one decoder core, clean to 115,062 frames, roughly 17&nbsp;% slower.</li>
+    </ul>
+
+    <h2>Scope beyond Jellyfin</h2>
+    <p>The same revert is carried by the two Ubuntu PPAs most RK3588 desktop images use for MPP, so browsers and players on those images meet it too during long 10-bit VP9 playback — YouTube HDR at 4K60 reaches the threshold in about eighteen minutes. Pi-Desktop 4.0 ships an upstream-lineage MPP with the guard intact and is not affected; that is the green line in the chart.</p>
+
+    <h2>Reports and corrections</h2>
+    <p>Filed as <a href="https://github.com/jellyfin/jellyfin-ffmpeg/issues/765">jellyfin/jellyfin-ffmpeg#765</a> and <a href="https://github.com/rockchip-linux/mpp/issues/972">rockchip-linux/mpp#972</a>. The first could not be reproduced by the maintainer and was closed; upstream MPP is <em>not</em> at fault, so the second was closed too. An earlier version of my evidence table had two mislabelled rows; both issues now carry a correction, and the corrected figures are the ones on this page.</p>
+    <p>Logs, the test scripts, the frame-gap analysis and frame grabs from either side of the failure are available on request.</p>
+
+    <p class="note navy">An LLM assistant (Claude) did the source analysis and wrote the test harness; the hardware testing and the measurements are mine, and I am responsible for them.</p>
+  </div>
+</main>
+
+<footer class="site">
+  <div class="wrap">
+    <p>Not affiliated with Canonical, Armbian, Rockchip, Arm, Google, Mozilla, Microsoft, Jellyfin or Shenzhen Xunlong.</p>
+    <p>Code GPL-3.0-or-later · artwork CC BY-SA 4.0 · by defcom5-rockchip, with Claude as co-engineer · <a href="https://github.com/defcom5-rockchip/pi-desktop">source of this site</a></p>
+  </div>
+</footer>
+</body>
+</html>
