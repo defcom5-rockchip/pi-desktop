@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Plaid Pi — 10-bit VP9 frame loss on RK3588</title>
-<meta name="description" content="Measured: the MPP video library bundled with jellyfin-ffmpeg silently drops about 30% of a long 10-bit VP9 transcode on RK3588. One reverted line, the numbers, a ten-minute reproduction, and the root cause and fix.">
+<title>Plaid Pi — VP9 frame loss on RK3588</title>
+<meta name="description" content="Measured: the MPP video library bundled with jellyfin-ffmpeg silently drops about 30% of a long VP9 transcode on RK3588. One reverted line, the numbers, a ten-minute reproduction, and the root cause and fix.">
 <link rel="stylesheet" href="style.css">
 <link rel="icon" href="img/pi-desktop.svg" type="image/svg+xml">
 </head>
@@ -25,8 +25,8 @@
 
 <main>
   <div class="wrap">
-    <h1>10-bit VP9 frame loss on RK3588</h1>
-    <p class="lede">The MPP video library bundled with <code>jellyfin-ffmpeg</code> silently drops about 30&nbsp;% of a long 10-bit VP9 transcode on RK3588 boards. One reverted line exposes it. Measured 3 October 2026 on an Orange Pi 5B. <strong>Update, 19 October 2026:</strong> the root cause is found and fixed (see <a href="#fix">Fix and workaround</a>), and it has since been confirmed on a second board (RK3588, Orange Pi 5 Plus).</p>
+    <h1>VP9 frame loss on RK3588</h1>
+    <p class="lede">The MPP video library bundled with <code>jellyfin-ffmpeg</code> silently drops about 30&nbsp;% of a long VP9 transcode on RK3588 boards (first measured with a 10-bit title; 8-bit is affected too). One reverted line exposes it. Measured 3 October 2026 on an Orange Pi 5B. <strong>Update, 19 October 2026:</strong> the root cause is found and fixed (see <a href="#fix">Fix and workaround</a>), and it has since been confirmed on a second board (RK3588, Orange Pi 5 Plus).</p>
 
     <figure>
       <img src="img/vp9-10bit-ours-vs-theirs.png" alt="Bar chart: frames missing per five minutes of a 100-minute 4K 10-bit VP9 title. Jellyfin's bundled library loses nothing for the first forty minutes, then 3,000 to 4,400 frames of every 7,200 for the rest of the title. An upstream-lineage library loses none at any point." width="1600" height="900" loading="lazy">
@@ -63,10 +63,10 @@
     <p>The synthetic clip matters: it is a <code>testsrc2</code> pattern at 1080p, so the trigger is the number of frames decoded in one session — not 4K, not HDR metadata, not any particular file.</p>
 
     <h2>Not affected</h2>
-    <p>HEVC Main 10, 8-bit H.264 and VP9, direct play (which never touches the server's decoder), and anything short. VP9 Profile 2 sources are mostly YouTube-origin HDR downloads, which is why libraries rarely hit this and why it looks like a bad file when they do.</p>
+    <p>HEVC Main 10 and H.264 (their frame labels restart at every keyframe), direct play (which never touches the server's decoder), and anything short. 8-bit VP9 <em>is</em> affected; it merely crosses the wall less often in short sessions, and on a second board it did so with 8-bit YouTube in Chromium. VP9 Profile 2 sources are mostly YouTube-origin HDR downloads, which is why libraries rarely hit this and why it looks like a bad file when they do.</p>
 
     <h2>Reproduce it in ten minutes</h2>
-    <p>Any RK3588 board with <code>jellyfin-ffmpeg</code> and a 10-bit VP9 file longer than about 20 minutes. To make one:</p>
+    <p>Any RK3588 board with <code>jellyfin-ffmpeg</code> and a VP9 file longer than about 20 minutes (10-bit is the most reliable trigger). To make one:</p>
 <pre><code>ffmpeg -f lavfi -i "testsrc2=size=1920x1080:rate=60:duration=1210,format=yuv420p10le" \
        -c:v libvpx-vp9 -profile:v 2 -pix_fmt yuv420p10le -deadline realtime \
        -cpu-used 8 -row-mt 1 -b:v 1500k test.webm</code></pre>
@@ -85,10 +85,10 @@
     </ul>
 
     <h2>Scope beyond Jellyfin</h2>
-    <p>The same revert is carried by the two Ubuntu PPAs most RK3588 desktop images use for MPP, so browsers and players on those images meet it too during long 10-bit VP9 playback — YouTube HDR at 4K60 reaches the threshold in about eighteen minutes. Pi-Desktop 4.0 ships an upstream-lineage MPP with the guard intact and is not affected; that is the green line in the chart. Plaid Pi 5.0 ships the fix above and runs VP9 on both cores.</p>
+    <p>The same revert is carried by the two Ubuntu PPAs most RK3588 desktop images use for MPP, so browsers and players on those images meet it too during long VP9 playback, 8- or 10-bit — YouTube at 4K60 reaches the threshold in about eighteen minutes. With the fix, 25-minute YouTube 4K60 VP9 sessions ran with 0 resets and 0.25&nbsp;% (Chromium) and 0.57&nbsp;% (Firefox) of frames dropped, measured with the players' own statistics. Pi-Desktop 4.0 ships an upstream-lineage MPP with the guard intact and is not affected; that is the green line in the chart. Plaid Pi 5.0 ships the fix above and runs VP9 on both cores.</p>
 
     <h2>Reports and corrections</h2>
-    <p>Filed as <a href="https://github.com/jellyfin/jellyfin-ffmpeg/issues/765">jellyfin/jellyfin-ffmpeg#765</a> and <a href="https://github.com/rockchip-linux/mpp/issues/972">rockchip-linux/mpp#972</a>. The first could not be reproduced by the maintainer and was closed; the second was closed at the time because upstream MPP, with its guard, is not affected. With the root cause found, the fix is now proposed upstream as <a href="https://github.com/rockchip-linux/mpp/pull/976">rockchip-linux/mpp#976</a>, with a comment on #972. An earlier version of my evidence table had two mislabelled rows; both issues now carry a correction, and the corrected figures are the ones on this page.</p>
+    <p>Filed as <a href="https://github.com/jellyfin/jellyfin-ffmpeg/issues/765">jellyfin/jellyfin-ffmpeg#765</a> and <a href="https://github.com/rockchip-linux/mpp/issues/972">rockchip-linux/mpp#972</a>. The first could not be reproduced by the maintainer and was closed; the second I closed myself at the time, having concluded upstream was not at fault; that was wrong — the bug is in upstream MPP's VP9 parser and the guard only hides it. With the root cause found, the fix is now proposed upstream as <a href="https://github.com/rockchip-linux/mpp/pull/976">rockchip-linux/mpp#976</a>, with a comment on #972. An earlier version of my evidence table had two mislabelled rows; both issues now carry a correction, and the corrected figures are the ones on this page.</p>
     <p>Logs, the test scripts, the frame-gap analysis and frame grabs from either side of the failure are available on request.</p>
 
     <p class="note navy">An LLM assistant (Claude) did the source analysis and wrote the test harness; the hardware testing and the measurements are mine, and I am responsible for them.</p>
