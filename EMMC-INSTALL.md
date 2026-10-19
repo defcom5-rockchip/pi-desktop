@@ -26,19 +26,19 @@ The loader sits in the first megabytes of the device, before the partitions. Rea
 sudo head -c 16M /dev/mmcblk0 | strings -n 10 | grep -m1 'U-Boot SPL'
 ```
 
-A Pi-Desktop 4.0 loader reports Armbian's build, which looks like
-`U-Boot SPL 2017.09_armbian-2017.09-S39cd-…-Bxxxx (Sep 14 2026 - …)`. The "2017.09" is what Rockchip's
+A Plaid Pi (4.0 or 5.0) loader reports Armbian's build, which looks like
+`U-Boot SPL 2017.09_armbian-2017.09-S39cd-…-Bxxxx (a 2026 date - …)`. The "2017.09" is what Rockchip's
 U-Boot fork calls itself; the date and the `armbian` tag are what matter. An Android or Rockchip vendor
 string, a much older date, or nothing at all means you are booting a foreign loader — use **Method A**.
 
-The package that owns the loader on a Pi-Desktop system is `linux-u-boot-orangepi5b-vendor`; it is held,
+The package that owns the loader on a Plaid Pi system is `linux-u-boot-orangepi5b-vendor`; it is held,
 so updates never replace it silently.
 
 ---
 
-## Method A — the supported install, from a Pi-Desktop running on microSD
+## Method A — the supported install, from a Plaid Pi running on microSD
 
-Boot Pi-Desktop from a microSD card first. Then identify the eMMC. **Do this carefully:**
+Boot Plaid Pi from a microSD card first. Then identify the eMMC. **Do this carefully:**
 
 ```sh
 lsblk -o NAME,SIZE,TYPE,MOUNTPOINT,MODEL
@@ -63,20 +63,22 @@ Choose *boot from eMMC — system on eMMC*. Armbian's installer writes the bootl
 your running system onto it, including anything you have installed and set up since the first boot. When
 it finishes: shut down, **remove the microSD**, power on.
 
-(`armbian-config` is not in the Pi-Desktop image; this installs it from Armbian's repository for the
+(`armbian-config` is not in the Plaid Pi image; this installs it from Armbian's repository for the
 occasion. It can be removed again afterwards.)
 
 ### A2 — the exact release image (a clean copy, nothing carried over)
 
 ```sh
-zstd -dc Pi-Desktop-4.0-Plaid.img.zst | sudo dd of=/dev/mmcblk0 bs=4M status=progress conv=fsync
+zstd -dc Plaid-Pi-5.0-orangepi5b.img.zst | sudo dd of=/dev/mmcblk0 bs=4M status=progress conv=fsync
 sync
 ```
 
 This writes bootloader, kernel and root filesystem exactly as released; the first boot on the eMMC runs the
 setup wizard again. The `flash-emmc.sh` script published with each release does the same with guard rails:
-it refuses the device you are running from, checks the image's SHA-256 first, asks for a typed confirmation
-and reads the eMMC back to verify the write.
+put it in the folder with the image and its `.sha256` file and run `sudo bash flash-emmc.sh`. It refuses the
+device you are running from, checks the image's SHA-256 first, asks for a typed confirmation and reads the eMMC
+back to verify the write. (The copy published with 4.0 also asked for a second checksum file that was never
+uploaded; use the 5.0 copy.)
 
 **From a PC instead:** put the board in **maskrom mode** (hold MASKROM while applying power, USB-C to the
 PC) and write the image with Rockchip's `rkdeveloptool` or the RKDevTool GUI. Use this when the board won't
@@ -110,10 +112,25 @@ Then follow **Method A**.
 If the board won't boot at all — including after a bad flash — it is almost certainly **not bricked**.
 RK3588 has a hardware recovery mode:
 
-1. Power the board off, connect **USB-C to a PC**.
-2. Hold the **MASKROM** button, apply power, release after a few seconds.
-3. On the PC: `rkdeveloptool ld` should list the device in maskrom mode.
-4. Erase and reflash with Rockchip's tooling (`rkdeveloptool ef`, then the loader and the image).
+On a Linux PC (Windows: Rockchip's RKDevTool does the same steps with the same loader file):
+
+1. Install the tools: `sudo apt install rkdeveloptool zstd git`.
+2. Build the RK3588 loader from Rockchip's repository (one time):
+   ```sh
+   git clone --depth 1 https://github.com/rockchip-linux/rkbin && cd rkbin
+   tools/boot_merger RKBOOT/RK3588MINIALL.ini      # writes rk3588_loader_v<version>.bin here
+   ```
+3. Power the board off, connect **USB-C to the PC**. Hold the **MASKROM** button, apply power, release after a
+   few seconds. `sudo rkdeveloptool ld` should list one device in **Maskrom** mode.
+4. Load the loader into the board's RAM: `sudo rkdeveloptool db rk3588_loader_v*.bin`.
+5. Write the image to the eMMC (decompress it first) and restart:
+   ```sh
+   zstd -d Plaid-Pi-5.0-orangepi5b.img.zst
+   sudo rkdeveloptool wl 0 Plaid-Pi-5.0-orangepi5b.img
+   sudo rkdeveloptool rd
+   ```
+   For a clean slate first (Method B's reasons), run `sudo rkdeveloptool ef` before `wl`; it erases the whole eMMC
+   and takes a while.
 
 Boards recovered this way come back fully. Keep this section in mind *before* you experiment.
 

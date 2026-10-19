@@ -3,15 +3,15 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Pi-Desktop — 10-bit VP9 frame loss on RK3588</title>
-<meta name="description" content="Measured: the MPP video library bundled with jellyfin-ffmpeg silently drops about 30% of a long 10-bit VP9 transcode on RK3588. One reverted line, the numbers, and a ten-minute reproduction.">
+<title>Plaid Pi — 10-bit VP9 frame loss on RK3588</title>
+<meta name="description" content="Measured: the MPP video library bundled with jellyfin-ffmpeg silently drops about 30% of a long 10-bit VP9 transcode on RK3588. One reverted line, the numbers, a ten-minute reproduction, and the root cause and fix.">
 <link rel="stylesheet" href="style.css">
 <link rel="icon" href="img/pi-desktop.svg" type="image/svg+xml">
 </head>
 <body>
 <header class="site">
   <div class="wrap">
-    <a class="brand" href="index.html"><img src="img/pi-desktop.svg" alt="" width="40" height="40"><span>Pi-Desktop</span></a>
+    <a class="brand" href="index.html"><img src="img/pi-desktop.svg" alt="" width="40" height="40"><span>Plaid Pi</span></a>
     <nav>
       <a href="download.html">Download</a>
       <a href="https://github.com/defcom5-rockchip/pi-desktop/blob/main/KNOWN-ISSUES.md">Known issues</a>
@@ -26,7 +26,7 @@
 <main>
   <div class="wrap">
     <h1>10-bit VP9 frame loss on RK3588</h1>
-    <p class="lede">The MPP video library bundled with <code>jellyfin-ffmpeg</code> silently drops about 30&nbsp;% of a long 10-bit VP9 transcode on RK3588 boards. One reverted line causes it. Measured 3 October 2026 on an Orange Pi 5B; nobody outside this bench has reproduced it yet, and that is the thing this page is asking for.</p>
+    <p class="lede">The MPP video library bundled with <code>jellyfin-ffmpeg</code> silently drops about 30&nbsp;% of a long 10-bit VP9 transcode on RK3588 boards. One reverted line exposes it. Measured 3 October 2026 on an Orange Pi 5B. <strong>Update, 19 October 2026:</strong> the root cause is found and fixed (see <a href="#fix">Fix and workaround</a>), and it has since been confirmed on a second board (RK3588, Orange Pi 5 Plus).</p>
 
     <figure>
       <img src="img/vp9-10bit-ours-vs-theirs.png" alt="Bar chart: frames missing per five minutes of a 100-minute 4K 10-bit VP9 title. Jellyfin's bundled library loses nothing for the first forty minutes, then 3,000 to 4,400 frames of every 7,200 for the rest of the title. An upstream-lineage library loses none at any point." width="1600" height="900" loading="lazy">
@@ -74,19 +74,21 @@
 <pre><code>sudo journalctl -k --since now -f | grep --line-buffered 'resetting for err' &amp;
 /usr/lib/jellyfin-ffmpeg/ffmpeg -c:v vp9_rkmpp -i test.webm -an -f null -</code></pre>
     <p>Compare the final <code>frame=</code> against the file's real frame count (<code>ffprobe -count_packets -select_streams v:0 -show_entries stream=nb_read_packets test.webm</code>). On an affected build the resets begin partway through and the count comes up short. On an unaffected MPP the numbers match and nothing is printed.</p>
-    <p class="note"><strong>A negative result is just as useful.</strong> If your board stays silent and the frame counts match, please say so — everything on this page was measured on one bench, by one person, and that is its main weakness.</p>
+    <p class="note"><strong>A negative result is just as useful.</strong> If your board stays silent and the frame counts match, please say so. The failure itself was measured on one bench, by one person; the fix has since been confirmed on a second board, and reports either way are still welcome.</p>
 
-    <h2>Fix and workaround</h2>
+    <h2 id="fix">Fix and workaround</h2>
+    <p><strong>Root cause, found after this page was first written (October 2026).</strong> VP9 has no picture order count, so MPP's parser labels each frame with a counter that never wraps, and the hardware writes those labels to the multi-core reference registers. The RK3588's two decoder cores behave as if they compare them in 16 bits when one core waits for a frame on the other, so once the counter passes 65,535 the wait breaks: the reset storm above. That is why upstream guards VP9 to one core on this chip. Keeping the label within 16 bits removes the fault and keeps both cores: with that one change, <code>mpi_dec_test</code> at 4K ran 77,400 jobs (10-bit) and 73,200 (8-bit) past the wrap with zero resets, 25–29&nbsp;% faster than the single-core guard, and Chromium, Firefox and mpv played 4K60 VP9 past the old failure point with no resets. The same change ran clean on a second board (RK3588, Orange Pi 5 Plus).</p>
     <ul>
-      <li><strong>Fix:</strong> drop the revert, restoring <code>support_fast_mode = 0</code> for RK3588. Measured cost on a real title: about 106&nbsp;fps instead of 120, because one decode task runs at a time. A rebuilt library with only that change decoded 116,787 frames with zero resets.</li>
+      <li><strong>Fix:</strong> wrap the frame label at 16 bits on RK3588 and keep both cores. Submitted upstream as <a href="https://github.com/rockchip-linux/mpp/pull/976">rockchip-linux/mpp#976</a> (open); shipped in Plaid Pi 5.0's MPP build (<code>librockchip-mpp1 … +pd33</code>, patch 0008 in its source package).</li>
+      <li><strong>Fix without the patch:</strong> drop the revert, restoring <code>support_fast_mode = 0</code> for RK3588. Measured cost on a real title: about 106&nbsp;fps instead of 120, because one decode task runs at a time. A rebuilt library with only that change decoded 116,787 frames with zero resets.</li>
       <li><strong>Workaround without rebuilding:</strong> <code>echo 1 &gt; /proc/mpp_service/rkvdec-core1/disable_work</code> — one decoder core, clean to 115,062 frames, roughly 17&nbsp;% slower.</li>
     </ul>
 
     <h2>Scope beyond Jellyfin</h2>
-    <p>The same revert is carried by the two Ubuntu PPAs most RK3588 desktop images use for MPP, so browsers and players on those images meet it too during long 10-bit VP9 playback — YouTube HDR at 4K60 reaches the threshold in about eighteen minutes. Pi-Desktop 4.0 ships an upstream-lineage MPP with the guard intact and is not affected; that is the green line in the chart.</p>
+    <p>The same revert is carried by the two Ubuntu PPAs most RK3588 desktop images use for MPP, so browsers and players on those images meet it too during long 10-bit VP9 playback — YouTube HDR at 4K60 reaches the threshold in about eighteen minutes. Pi-Desktop 4.0 ships an upstream-lineage MPP with the guard intact and is not affected; that is the green line in the chart. Plaid Pi 5.0 ships the fix above and runs VP9 on both cores.</p>
 
     <h2>Reports and corrections</h2>
-    <p>Filed as <a href="https://github.com/jellyfin/jellyfin-ffmpeg/issues/765">jellyfin/jellyfin-ffmpeg#765</a> and <a href="https://github.com/rockchip-linux/mpp/issues/972">rockchip-linux/mpp#972</a>. The first could not be reproduced by the maintainer and was closed; upstream MPP is <em>not</em> at fault, so the second was closed too. An earlier version of my evidence table had two mislabelled rows; both issues now carry a correction, and the corrected figures are the ones on this page.</p>
+    <p>Filed as <a href="https://github.com/jellyfin/jellyfin-ffmpeg/issues/765">jellyfin/jellyfin-ffmpeg#765</a> and <a href="https://github.com/rockchip-linux/mpp/issues/972">rockchip-linux/mpp#972</a>. The first could not be reproduced by the maintainer and was closed; the second was closed at the time because upstream MPP, with its guard, is not affected. With the root cause found, the fix is now proposed upstream as <a href="https://github.com/rockchip-linux/mpp/pull/976">rockchip-linux/mpp#976</a>, with a comment on #972. An earlier version of my evidence table had two mislabelled rows; both issues now carry a correction, and the corrected figures are the ones on this page.</p>
     <p>Logs, the test scripts, the frame-gap analysis and frame grabs from either side of the failure are available on request.</p>
 
     <p class="note navy">An LLM assistant (Claude) did the source analysis and wrote the test harness; the hardware testing and the measurements are mine, and I am responsible for them.</p>

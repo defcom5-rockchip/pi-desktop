@@ -1,6 +1,6 @@
 # Agent instructions
 
-This is the PRODUCT repository for Pi Desktop: user-facing docs and image
+This is the PRODUCT repository for Plaid Pi: user-facing docs and image
 releases only. The build system lives in defcom5-rockchip/pi-desktop-recipe
 (Armbian userpatches; the retired 2.0.x line used defcom5-rockchip/ubuntu-rockchip);
 the video driver in defcom5-rockchip/rockchip-vaapi (read its AGENTS.md

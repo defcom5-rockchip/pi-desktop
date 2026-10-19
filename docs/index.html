@@ -3,15 +3,15 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Pi-Desktop — a desktop for the Orange Pi 5B</title>
-<meta name="description" content="Pi-Desktop 4.0 Plaid: a GNOME 50 desktop image for the Orange Pi 5B (RK3588S), built from Ubuntu 26.04 packages with the Armbian build framework. 4K at 120 Hz, hardware video, honest known-issues file.">
+<title>Plaid Pi — a desktop for the Orange Pi 5B</title>
+<meta name="description" content="Plaid Pi (formerly Pi-Desktop): a GNOME 50 desktop image for the Orange Pi 5B (RK3588S), built from Ubuntu 26.04 packages with the Armbian build framework. 4K at 120 Hz, hardware video, honest known-issues file.">
 <link rel="stylesheet" href="style.css">
 <link rel="icon" href="img/pi-desktop.svg" type="image/svg+xml">
 </head>
 <body>
 <header class="site">
   <div class="wrap">
-    <a class="brand" href="index.html"><img src="img/pi-desktop.svg" alt="" width="40" height="40"><span>Pi-Desktop</span></a>
+    <a class="brand" href="index.html"><img src="img/pi-desktop.svg" alt="" width="40" height="40"><span>Plaid Pi</span></a>
     <nav>
       <a href="download.html">Download</a>
       <a href="https://github.com/defcom5-rockchip/pi-desktop/blob/main/KNOWN-ISSUES.md">Known issues</a>
@@ -25,9 +25,9 @@
 
 <section class="hero">
   <div class="wrap">
-    <h1>The Orange Pi 5B, as a desktop computer.<small><span class="version">Pi-Desktop 4.0 "Plaid"</span> — GNOME 50 on Ubuntu 26.04 packages, built with the Armbian framework</small></h1>
-    <p>4K at 120 Hz over HDMI out of the box, a flicker-free desktop, hardware video, Wi-Fi that joins your network, Bluetooth that survives Wi-Fi — and a known-issues file on purpose.</p>
-    <a class="btn" href="https://github.com/defcom5-rockchip/pi-desktop/releases">Download 4.0 Plaid</a>
+    <h1>The Orange Pi 5B, as a desktop computer.<small><span class="version">Plaid Pi 5.0</span> — GNOME 50 on Ubuntu 26.04 packages, built with the Armbian framework</small></h1>
+    <p>Plaid Pi — the new name of Pi-Desktop — gives you 4K at 120 Hz over HDMI out of the box, a flicker-free desktop, hardware video including AV1, Wi-Fi that joins your network, Bluetooth that survives Wi-Fi — and a known-issues file on purpose.</p>
+    <a class="btn" href="https://github.com/defcom5-rockchip/pi-desktop/releases/tag/v5.0.0">Download Plaid Pi 5.0</a>
     <a class="btn secondary" href="download.html">How to install</a>
   </div>
 </section>
@@ -35,37 +35,38 @@
 <main>
   <div class="wrap">
     <figure>
-      <img src="img/desktop.png" alt="The Pi-Desktop 4.0 desktop: tartan-canopied penguins parachuting over a dusk horizon, with the How-To file on the desktop." width="1920" height="1080" loading="lazy">
-      <figcaption>Pi-Desktop 4.0 on a 32-inch 4K monitor at 120 Hz.</figcaption>
+      <img src="img/desktop.png" alt="Pi-Desktop 4.0 on a 32-inch 4K monitor at 120 Hz: tartan-canopied penguins parachuting over a dusk horizon, with the How-To file on the desktop. 5.0 ships the Plaid dock and top bar and dark mode by default (screenshot to follow)." width="1920" height="1080" loading="lazy">
+      <figcaption>Pi-Desktop 4.0 on a 32-inch 4K monitor at 120 Hz; 5.0 ships the Plaid dock and top bar and dark mode by default (screenshot to follow).</figcaption>
     </figure>
 
     <h2>What it is</h2>
-    <p>A GNOME 50 desktop image for the Orange Pi 5B (RK3588S), built from Ubuntu 26.04 packages with the Armbian build framework, on Armbian's Rockchip vendor kernel 6.1.172 plus eleven Pi-Desktop patches. Not affiliated with or endorsed by Canonical or Armbian. Not a Raspberry Pi product.</p>
-    <p>Everything below was checked on an Orange Pi 5B running the release candidate (2026-10-03: 78 of 79 first-boot checks passed; the one miss was a setting the tester had changed himself).</p>
+    <p>A GNOME 50 desktop image for the Orange Pi 5B (RK3588S), built from Ubuntu 26.04 packages with the Armbian build framework, on Armbian's Rockchip vendor kernel merged with upstream stable Linux 6.1.189 plus the Plaid Pi kernel patches. Not affiliated with or endorsed by Canonical or Armbian. Not a Raspberry Pi product.</p>
+    <p>Everything below was checked on an Orange Pi 5B running the 5.0 release image (2026-10-19: 133 of 133 first-boot checks passed, and again after all seven first-click apps and Pro Updates had run), unless an item says it was measured on 4.0.</p>
     <ul class="features">
       <li><strong>4K at 120 Hz over HDMI.</strong> The vendor kernel reaches HDMI 2.1 FRL with our clock patches; the three ways it failed on the way there (black screens, a hang on screen-off, a black screen after a monitor power-cycle) are fixed by kernel patches, each re-tested on hardware.</li>
       <li><strong>Flicker-free.</strong> Arm's Mali user-space driver instead of Mesa panfork, and AFBC scanout rejected in the kernel. The Chromium typing and thumbnail flicker of 2.0.x is gone.</li>
-      <li><strong>Hardware video, 10-bit included, in the browser that ships with it.</strong> Our rockchip-vaapi driver 2.2.0. Measured on this image: Chromium decodes a 4K HEVC Main 10 file on the video engine — 595 frames, none dropped, about 10% of the CPU — so Jellyfin direct-plays 10-bit with no server transcode, out of the box. Firefox decodes 10-bit in software on this build. mpv goes through VA-API, with profiles for DVDs and Blu-rays. AV1 is software.</li>
+      <li><strong>Hardware video, 10-bit and AV1 included, in the browser that ships with it.</strong> Our rockchip-vaapi driver 3.5.0 on our build of Rockchip's MPP library. Measured on 4.0 (2026-10-03): Chromium decodes a 4K HEVC Main 10 file on the video engine — 595 frames, none dropped, about a fifth of the CPU — so Jellyfin direct-plays 10-bit with no server transcode, out of the box; Chromium is 155 in 5.0. VP9 now runs on both decoder cores (25–29 % more throughput; the fix is submitted upstream as rockchip-linux/mpp#976). AV1 is new in 5.0: Firefox, installed on first click with our small Mali library, plays YouTube 4K60 AV1 on the video engine with 1.2–1.5 % of frames dropped after start-up, where driver 3.0.0 dropped 91–95 %; Chromium and Chrome start AV1 playback clean in 10 of 10 measured first plays. mpv goes through VA-API, with profiles for DVDs and Blu-rays.</li>
       <li><strong>Wi-Fi joins WPA3 and WPA2/WPA3 networks.</strong> A one-branch bug in the vendor Wi-Fi driver refused every modern home network with Ubuntu 26.04's wpa_supplicant; fixed, and sent upstream (armbian/linux-rockchip#561).</li>
       <li><strong>Bluetooth that survives Wi-Fi.</strong> The AP6275P boot-race and coexistence fixes from 2.0.x, carried over with the self-healing sentinel. The ten-second mute at every YouTube ad on a Bluetooth speaker is gone.</li>
       <li><strong>Audio.</strong> PipeWire 1.6.9 with real-time priority from boot; the 3.5 mm jack works and follows plugging; Rhythmbox 3.5.1, Audacity, Brasero.</li>
-      <li><strong>Screensaver instead of blanking</strong>, lock on demand, a login screen at every boot after the first.</li>
+      <li><strong>Screensaver instead of blanking</strong>, lock on demand, a login screen at every boot with the Plaid Pi logo on it.</li>
       <li><strong>Fixes you would otherwise find yourself.</strong> GUI password prompts that hang on Ubuntu 26.04 with a 6.1 kernel; a large file copy that could get the whole session killed; every board called "pidesktop".</li>
-      <li><strong>Small image, apps on first click.</strong> About 1.5 GB compressed. Firefox, LibreOffice, GIMP, Inkscape, Thunderbird, VSCodium and Google Chrome download from their own repositories on the first click.</li>
-      <li><strong>No snaps. No telemetry of our own.</strong> What the base still talks to is on the <a href="privacy.html">privacy page</a>.</li>
+      <li><strong>Small image, apps on first click.</strong> 1.38 GiB compressed. Firefox, LibreOffice, GIMP, Inkscape, Thunderbird, VSCodium and Google Chrome download from their own repositories on the first click; all seven ran on the 5.0 image on hardware.</li>
+      <li><strong>Updates by themselves.</strong> Ubuntu's security updates and the browsers' own repositories update daily; Pro Updates 1.5.0 shows and applies the rest when you open it. The kernel and boot packages are held and change only with Plaid Pi releases.</li>
+      <li><strong>No snaps. No telemetry of our own.</strong> What the base still talks to is on the <a href="privacy.html">privacy page</a>. Armbian's browser policies (start page, bookmarks) are not applied in 5.0.</li>
     </ul>
 
     <h2>Honest scope</h2>
-    <p>One maintainer, a vendor 6.1 kernel, best effort. It ships a <a href="https://github.com/defcom5-rockchip/pi-desktop/blob/main/KNOWN-ISSUES.md">KNOWN-ISSUES</a> file on purpose — we'd rather tell you what's rough than let you find out. Suspend is disabled. 10-bit video is hardware-decoded in Chromium, software in Firefox. On long 10-bit VP9 <em>transcodes</em>, the video library most RK3588 images ship drops about 30&nbsp;% of the frames — <a href="vp9-10bit-rk3588.html">measured here</a>; Pi-Desktop is not affected. HDR on the maintainer's monitor stays pale, and that is the monitor. The board has two display outputs, HDMI 2.1 and DisplayPort over USB-C, nothing else; a passive HDMI-to-DisplayPort adapter cannot work on any computer.</p>
-    <p>Security updates for the Ubuntu packages come from Ubuntu's repositories for the life of 26.04. The kernel and boot packages are built from Armbian's branch and refreshed with Pi-Desktop releases for as long as Armbian builds that branch. Pi-Desktop's own packages are updated with releases. There is no guaranteed support period and no commercial product behind this. The <a href="security.html">security page</a> says how to report a problem.</p>
+    <p>One maintainer, a vendor 6.1 kernel, best effort. It ships a <a href="https://github.com/defcom5-rockchip/pi-desktop/blob/main/KNOWN-ISSUES.md">KNOWN-ISSUES</a> file on purpose — we'd rather tell you what's rough than let you find out. Suspend is disabled. 10-bit video is hardware-decoded in Chromium, Chrome and mpv, and in Firefox through our launcher library; AV1 in Chromium can show a rare stale frame mid-stream. On long 10-bit VP9 <em>transcodes</em>, the video library most RK3588 images ship drops about 30&nbsp;% of the frames — <a href="vp9-10bit-rk3588.html">measured here</a>, root cause found and the fix sent upstream; Plaid Pi is not affected. HDR on the maintainer's monitor stays pale, and that is the monitor. The board has two display outputs, HDMI 2.1 and DisplayPort over USB-C, nothing else; a passive HDMI-to-DisplayPort adapter cannot work on any computer.</p>
+    <p>Security updates for the Ubuntu packages come from Ubuntu's repositories for the life of 26.04. The kernel and boot packages are built from Armbian's branch, merged with upstream stable by Plaid Pi, and refreshed with Plaid Pi releases: a new kernel means installing the new image. Plaid Pi's own packages are updated with releases. There is no guaranteed support period and no commercial product behind this. The <a href="security.html">security page</a> says how to report a problem.</p>
 
     <h2>The recipe is public</h2>
-    <p><strong>Built on Armbian, by hook.</strong> Pi-Desktop images are built from pinned Armbian build-framework inputs. Armbian owns the RK3588 boot chain: U-Boot, partition layout, kernel branch, device trees, modules, firmware, board-support packages and the first-boot filesystem resize. Pi-Desktop changes one thing there, eleven kernel patches applied through Armbian's own <code>userpatches</code> mechanism, all published with the source. Everything else is a userspace layer applied through Armbian's late image hook, <code>customize-image.sh</code>, and every line of it is in the recipe repository. The images are credential-free: there is no default user or password, the first boot creates yours.</p>
+    <p><strong>Built on Armbian, by hook.</strong> Plaid Pi images are built from pinned Armbian build-framework inputs. Armbian owns the RK3588 boot chain: U-Boot, partition layout, kernel branch, device trees, modules, firmware, board-support packages and the first-boot filesystem resize. Plaid Pi changes the kernel there: upstream stable 6.1.189 merged into Armbian's branch, and its own patches (0001–0017) applied through Armbian's own <code>userpatches</code> mechanism, all published with the source. Everything else is a userspace layer applied through Armbian's late image hook, <code>customize-image.sh</code>, and every line of it is in the recipe repository. The images are credential-free: there is no default user or password, the first boot creates yours.</p>
     <p>Don't trust the image; audit the recipe.</p>
     <ul>
       <li><strong>Recipe</strong> — build config, customize script, overlay, kernel patches, package build scripts: <a href="https://github.com/defcom5-rockchip/pi-desktop-recipe">defcom5-rockchip/pi-desktop-recipe</a>.</li>
-      <li><strong>Kernel</strong> — Armbian's <code>rk-6.1-rkr7.2</code> with the eleven patches applied, tag <code>pi-desktop-4.0</code>: <a href="https://github.com/defcom5-rockchip/linux-rockchip">defcom5-rockchip/linux-rockchip</a>.</li>
-      <li><strong>Video driver</strong> — <a href="https://github.com/defcom5-rockchip/rockchip-vaapi">defcom5-rockchip/rockchip-vaapi</a>.</li>
+      <li><strong>Kernel</strong> — Armbian's <code>rk-6.1-rkr7.2</code> at <code>44bbd021</code> merged with upstream stable v6.1.189, with the Plaid Pi patches (all but one also as commits on the tag), tag <code>pi-desktop-5.0</code> (4.0: tag <code>pi-desktop-4.0</code>): <a href="https://github.com/defcom5-rockchip/linux-rockchip">defcom5-rockchip/linux-rockchip</a>.</li>
+      <li><strong>Video driver</strong> — <a href="https://github.com/defcom5-rockchip/rockchip-vaapi">defcom5-rockchip/rockchip-vaapi</a>, release <a href="https://github.com/defcom5-rockchip/rockchip-vaapi/releases/tag/v3.5.0">v3.5.0</a>.</li>
     </ul>
     <p>The <a href="legal.html">legal page</a> has the complete corresponding-source table, the licences and the trademark notes. The 2.0.x line on ubuntu-rockchip was retired at v2.0.2; the <a href="https://github.com/defcom5-rockchip/pi-desktop/blob/main/CHANGELOG.md">changelog</a> has the history.</p>
   </div>

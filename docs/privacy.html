@@ -3,15 +3,15 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Pi-Desktop — privacy</title>
-<meta name="description" content="What the Pi-Desktop image sends over the network and what it does not. No telemetry of its own, no accounts, no data collected by the maintainer.">
+<title>Plaid Pi — privacy</title>
+<meta name="description" content="What the Plaid Pi image sends over the network and what it does not. No telemetry of its own, no accounts, no data collected by the maintainer.">
 <link rel="stylesheet" href="style.css">
 <link rel="icon" href="img/pi-desktop.svg" type="image/svg+xml">
 </head>
 <body>
 <header class="site">
   <div class="wrap">
-    <a class="brand" href="index.html"><img src="img/pi-desktop.svg" alt="" width="40" height="40"><span>Pi-Desktop</span></a>
+    <a class="brand" href="index.html"><img src="img/pi-desktop.svg" alt="" width="40" height="40"><span>Plaid Pi</span></a>
     <nav>
       <a href="download.html">Download</a>
       <a href="https://github.com/defcom5-rockchip/pi-desktop/blob/main/KNOWN-ISSUES.md">Known issues</a>
@@ -26,20 +26,22 @@
 <main>
   <div class="wrap">
     <h1>Privacy</h1>
-    <p class="lede">Pi-Desktop collects nothing. There is no account, no telemetry of its own, no crash uploader of its own, and nothing is sent to the maintainer. The image's privacy-policy link (<code>PRIVACY_POLICY_URL</code> in <code>/etc/os-release</code>) points at this page.</p>
-    <p>What follows is what the image <em>does</em> send, by whom, and why, so you can judge it. It was checked on the 4.0 release candidate (test9) on 2026-10-03 by reading the installed configuration and services, not by assuming.</p>
+    <p class="lede">Plaid Pi collects nothing. There is no account, no telemetry of its own, no crash uploader of its own, and nothing is sent to the maintainer. The image's privacy-policy link (<code>PRIVACY_POLICY_URL</code> in <code>/etc/os-release</code>) points at this page.</p>
+    <p>What follows is what the image <em>does</em> send, by whom, and why, so you can judge it. It was checked on the 4.0 release image on 2026-10-03 by reading the installed configuration and services, not by assuming. Rows marked 5.0 come from the 5.0 recipe; the 5.0 image's first-boot check (133 of 133 on 2026-10-19) confirms the ones it covers (https apt sources, browsers from their vendors only, GNOME Software absent, Pro Updates present, the dock's music pill off, nothing listening on port 111).</p>
 
     <h2>What contacts the network by default</h2>
     <div class="table">
     <table>
       <thead><tr><th>When</th><th>What</th><th>Where</th><th>Why</th></tr></thead>
       <tbody>
-        <tr><td>First login (once)</td><td>Armbian's setup wizard (<code>armbian-firstlogin</code>), Armbian code</td><td><code>ipinfo.io</code> (learns your public IP), then <code>ipwhois.app</code> (looks that IP up)</td><td>to suggest your time zone and locale. 5-second timeout; skipped when there is no network. Pi-Desktop's own addition to the wizard — the computer-name question — is local.</td></tr>
+        <tr><td>First login (once)</td><td>Armbian's setup wizard (<code>armbian-firstlogin</code>), Armbian code</td><td><code>ipinfo.io</code> over HTTPS (learns your public IP), then <code>ipwhois.app</code> over <strong>plain HTTP</strong> (looks that IP up, so the address crosses the network unencrypted)</td><td>to suggest your time zone and locale. 5-second timeout; skipped when there is no network. Plaid Pi's own addition to the wizard — the computer-name question — is local.</td></tr>
         <tr><td>Boot, then continuously</td><td>chrony (NTP)</td><td><code>1.ntp.ubuntu.com</code> … <code>4.ntp.ubuntu.com</code> with NTS, <code>ntp-bootstrap.ubuntu.com</code></td><td>clock sync. Ubuntu's defaults.</td></tr>
-        <tr><td>Daily</td><td>apt (<code>apt-daily</code> timers, <code>unattended-upgrades</code>)</td><td><code>ports.ubuntu.com</code> (Ubuntu), <code>apt.armbian.com</code> (Armbian), <code>ppa.launchpadcontent.net</code> (the xtradeb/apps and mozillateam PPAs) — and, once you have installed them, <code>dl.google.com</code> (Chrome) and <code>download.vscodium.com</code> (VSCodium)</td><td>package lists; <code>unattended-upgrades</code> installs Ubuntu security updates on its own. The held kernel and boot packages are not touched.</td></tr>
-        <tr><td>In the background</td><td>GNOME Software (PackageKit)</td><td>the same apt sources</td><td>checks for and downloads updates (<code>download-updates</code> is on). Ratings (ODRS) are off. No Flatpak remotes are configured, so Flathub is not contacted.</td></tr>
+        <tr><td>Daily (5.0; on 4.0 only when you run apt, see the security page)</td><td>apt (<code>apt-daily</code> timers, <code>unattended-upgrades</code>)</td><td>over HTTPS in 5.0 (4.0: plain HTTP for the first two): <code>ports.ubuntu.com</code> (Ubuntu), <code>apt.armbian.com</code> (Armbian, which redirects to a mirror near you), <code>ppa.launchpadcontent.net</code> (the xtradeb/apps and mozillateam PPAs) — and, once you have installed them, <code>dl.google.com</code> (Chrome) and <code>download.vscodium.com</code> (VSCodium)</td><td>package lists; <code>unattended-upgrades</code> installs Ubuntu security updates on its own. The held kernel and boot packages are not touched.</td></tr>
+        <tr><td>In the background (4.0 only)</td><td>GNOME Software (PackageKit)</td><td>the same apt sources</td><td>checks for and downloads updates (<code>download-updates</code> is on). Ratings (ODRS) are off. <strong>5.0 does not install GNOME Software</strong>: updates come from the daily apt job and from Pro Updates when you open it.</td></tr>
+        <tr><td>Never by itself</td><td>Flatpak (installed, no remotes)</td><td>—</td><td>no Flatpak remote is configured, so Flathub is not contacted, until you add it: Pro Updates asks first and adds it for your user only.</td></tr>
+        <tr><td>When you open it (5.0)</td><td>Pro Updates (the update window)</td><td>DNS lookups of the update hosts it lists; your Flatpak remotes, if any (none by default); when you apply, the apt sources above; "Switch these to https" sends one HTTPS request to each mirror it is about to switch; <code>flathub.org</code> over HTTPS only if you agree to a Flatpak install, which adds Flathub for your user</td><td>shows and applies updates on request. No timer or autostart; nothing is sent to the maintainer. It keeps a log of its root actions in <code>/var/log/pro-updates.log</code>, backups of changed apt files in <code>/var/backups/pro-updates</code>, and your choices in <code>~/.config/pro-updates</code>.</td></tr>
+        <tr><td>Only if you switch it on</td><td>the Dhruva dock's music pill (off by default in 5.0)</td><td><code>lrclib.net</code> over HTTPS; album-art addresses the playing app provides</td><td>when on, it looks up lyrics for every track you play (artist, title and length are sent to lrclib.net) and fetches album art. Plaid Pi ships it switched off; the rest of the dock contacts nothing.</td></tr>
         <tr><td>Daily</td><td><code>fwupd-refresh.timer</code></td><td><code>cdn.fwupd.org</code> (LVFS)</td><td>downloads the firmware catalogue. Nothing on this board is updated through it.</td></tr>
-        <tr><td>Daily</td><td>Armbian's <code>armbian-quotes</code> cron job</td><td><code>github.armbian.com/quotes.txt</code></td><td>fetches the quotes shown in the terminal message of the day.</td></tr>
         <tr><td>On the local network</td><td>Avahi (mDNS)</td><td>your LAN only</td><td><code>.local</code> names.</td></tr>
       </tbody>
     </table>
@@ -50,16 +52,17 @@
       <li><strong>Crash reports.</strong> Ubuntu's crash collector <code>apport</code> is installed and running; it writes crash data to <code>/var/crash</code> on the device. Nothing is uploaded: the GNOME crash dialog (<code>apport-gtk</code>) is not installed, "Send error reports to Canonical" is off, automatic reporting is off, and the uploader (<code>whoopsie</code>) is switched off twice — its systemd units are masked and <code>report_crashes=false</code> is set. It cannot be removed outright because Settings (gnome-control-center) depends on its preferences helper.</li>
       <li><strong>Location.</strong> <code>geoclue</code> is installed but only runs when an application asks. GNOME's Location Services and Automatic Time Zone are off by default; submission of Wi-Fi scan data is off.</li>
       <li><strong>Online accounts.</strong> GNOME Online Accounts is installed and contacts a provider only when you add one.</li>
-      <li><strong>Not installed:</strong> <code>popularity-contest</code>, <code>ubuntu-report</code>, the Ubuntu Pro client, <code>snapd</code>, Armbian's <code>armbian-config</code>. Ubuntu's message-of-the-day news fetch (<code>motd-news</code>) is disabled. Armbian's daily <code>armbian-apt-updates</code> job only simulates an upgrade locally.</li>
-      <li><strong>The login banner.</strong> Armbian's message-of-the-day scripts include one that fetches your public address from <code>ipv4.whatismyip.akamai.com</code> at every console or SSH login. Pi-Desktop switches that part off (<code>MOTD_DISABLE</code>), together with the rest of Armbian's banner; only a one-line Pi-Desktop header and the pending-updates notice remain.</li>
-      <li><strong>Pi-Desktop's own services</strong> — the screensaver, the Bluetooth sentinel, the hostname prompt, the headphone-follow and OUT1 services, the login-screen service, the os-release keeper — do not use the network.</li>
+      <li><strong>Plaid Pi's own tools (5.0).</strong> Killswitch and the Plaid Panel top bar contact nothing. Killswitch reads the local mount table and probes each mount with a local <code>stat</code>; the dock (Dhruva) contacts nothing unless you switch its music pill on (see the table).</li>
+      <li><strong>Not installed:</strong> <code>popularity-contest</code>, <code>ubuntu-report</code>, the Ubuntu Pro client, <code>snapd</code>, Armbian's <code>armbian-config</code>. Ubuntu's message-of-the-day news fetch (<code>motd-news</code>) is disabled. Armbian's daily <code>armbian-apt-updates</code> job only simulates an upgrade locally, and Armbian's <code>armbian-quotes</code> cron job (a quote of the day from <code>github.armbian.com</code>) is removed.</li>
+      <li><strong>The login banner.</strong> Armbian's message-of-the-day scripts include one that fetches your public address from <code>ipv4.whatismyip.akamai.com</code> at every console or SSH login. Plaid Pi switches that part off (<code>MOTD_DISABLE</code>), together with the rest of Armbian's banner; only a one-line Plaid Pi header and the pending-updates notice remain.</li>
+      <li><strong>Plaid Pi's own services</strong> — the screensaver, the Bluetooth sentinel, the hostname prompt, the headphone-follow and OUT1 services, the login-screen service, the os-release keeper — do not use the network.</li>
     </ul>
 
     <h2>Browsers and the apps you install</h2>
     <ul>
-      <li><strong>Chromium</strong> (xtradeb's build) is upstream Chromium and has Chromium's own network behaviour: Safe Browsing, component updates, Google sign-in through the API keys Debian's packaging carries. Google's privacy policy governs the Google services it talks to. Pi-Desktop adds only the hardware-video flags; Debian's defaults include <code>--disable-pings</code>.</li>
+      <li><strong>Chromium</strong> (xtradeb's build) is upstream Chromium and has Chromium's own network behaviour: Safe Browsing, component updates, Google sign-in through the API keys Debian's packaging carries. Google's privacy policy governs the Google services it talks to. Plaid Pi adds only the hardware-video flags; Debian's defaults include <code>--disable-pings</code>.</li>
       <li><strong>The first-click installers</strong> each contact one place: Google Chrome → <code>dl.google.com</code> (the signing key, checked against a pinned fingerprint, and the package; Google's apt repository then stays configured so Chrome updates from Google); VSCodium → <code>gitlab.com</code> (the repository key, pinned fingerprint) and <code>download.vscodium.com</code>; Firefox and Thunderbird → the Mozilla Team PPA on <code>ppa.launchpadcontent.net</code>; LibreOffice, GIMP and Inkscape → <code>ports.ubuntu.com</code>. The installer logs to <code>/var/log/pidesktop-install-app.log</code> on the device.</li>
-      <li><strong>Once installed, those apps have their own policies:</strong> Google (Chrome), Mozilla (Firefox, Thunderbird), the VSCodium project (VSCodium is VS Code with Microsoft's telemetry removed), The Document Foundation, GIMP, Inkscape. Pi-Desktop ships a Firefox enterprise-policy file that turns off Firefox telemetry, studies, Pocket and the first-run pages.</li>
+      <li><strong>Once installed, those apps have their own policies:</strong> Google (Chrome), Mozilla (Firefox, Thunderbird), the VSCodium project (VSCodium is VS Code with Microsoft's telemetry removed), The Document Foundation, GIMP, Inkscape. Plaid Pi ships a Firefox enterprise-policy file that turns off Firefox telemetry, studies, Pocket and the first-run pages.</li>
     </ul>
 
     <h2>The website and the issue tracker</h2>
