@@ -11,7 +11,7 @@ A GNOME 50 desktop image for the Orange Pi 5B (RK3588S), built from Ubuntu 26.04
 build framework, on Armbian's Rockchip vendor kernel merged with upstream stable Linux 6.1.189 plus the Plaid Pi
 kernel patches. Not affiliated with or endorsed by Canonical or Armbian. Not a Raspberry Pi product.
 
-![Pi-Desktop 4.0 on a 32-inch 4K monitor at 120 Hz: tartan-canopied penguins parachuting over a dusk horizon; 5.0 ships the Plaid dock and top bar and dark mode by default (screenshot to follow)](docs/img/desktop.png)
+![Plaid Pi 5.0 on a 32-inch 4K monitor at 120 Hz: tartan-canopied penguins parachuting over a dusk horizon under the Plaid top bar; the dock auto-hides until the pointer reaches the bottom edge.](docs/img/desktop.png)
 
 ## What it is
 
