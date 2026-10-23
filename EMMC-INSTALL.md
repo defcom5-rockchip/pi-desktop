@@ -69,7 +69,7 @@ occasion. It can be removed again afterwards.)
 ### A2 — the exact release image (a clean copy, nothing carried over)
 
 ```sh
-zstd -dc Plaid-Pi-5.0-orangepi5b.img.zst | sudo dd of=/dev/mmcblk0 bs=4M status=progress conv=fsync
+zstd -dc Plaid-Pi-5.5-orangepi5b.img.zst | sudo dd of=/dev/mmcblk0 bs=4M status=progress conv=fsync
 sync
 ```
 
@@ -125,8 +125,8 @@ On a Linux PC (Windows: Rockchip's RKDevTool does the same steps with the same l
 4. Load the loader into the board's RAM: `sudo rkdeveloptool db rk3588_loader_v*.bin`.
 5. Write the image to the eMMC (decompress it first) and restart:
    ```sh
-   zstd -d Plaid-Pi-5.0-orangepi5b.img.zst
-   sudo rkdeveloptool wl 0 Plaid-Pi-5.0-orangepi5b.img
+   zstd -d Plaid-Pi-5.5-orangepi5b.img.zst
+   sudo rkdeveloptool wl 0 Plaid-Pi-5.5-orangepi5b.img
    sudo rkdeveloptool rd
    ```
    For a clean slate first (Method B's reasons), run `sudo rkdeveloptool ef` before `wl`; it erases the whole eMMC

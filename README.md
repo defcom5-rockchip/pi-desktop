@@ -1,23 +1,23 @@
 # Plaid Pi (formerly Pi-Desktop)
-### The Orange Pi 5B, as a desktop computer.
+### The Orange Pi 5 and 5B, as a desktop computer.
 
-**Plaid Pi 5.0** · [Download](#download) · [Known issues](KNOWN-ISSUES.md) · [Changelog](CHANGELOG.md) ·
+**Plaid Pi 5.5** · [Download](#download) · [Known issues](KNOWN-ISSUES.md) · [Changelog](CHANGELOG.md) ·
 [Privacy](PRIVACY.md) · [Legal](LEGAL.md) · [Security](SECURITY.md) · [Website](https://defcom5-rockchip.github.io/pi-desktop/)
 
-> The 2.0.x line on `ubuntu-rockchip` was retired at v2.0.2 (2026-09-23); 4.0 was its successor on a new base, and
-> 5.0 (2026-10-19) continues it under the new name — see the [CHANGELOG](CHANGELOG.md).
+> The 2.0.x line on `ubuntu-rockchip` was retired at v2.0.2 (2026-09-23); 4.0 was its successor on a new base;
+> 5.0 (2026-10-19) continued it under the new name, and 5.5 is the current release — see the [CHANGELOG](CHANGELOG.md).
 
-A GNOME 50 desktop image for the Orange Pi 5B (RK3588S), built from Ubuntu 26.04 packages with the Armbian
+A GNOME 50 desktop image for the Orange Pi 5B and Orange Pi 5 (RK3588S), built from Ubuntu 26.04 packages with the Armbian
 build framework, on Armbian's Rockchip vendor kernel merged with upstream stable Linux 6.1.189 plus the Plaid Pi
 kernel patches. Not affiliated with or endorsed by Canonical or Armbian. Not a Raspberry Pi product.
 
-![Plaid Pi 5.0 on a 32-inch 4K monitor at 120 Hz: tartan-canopied penguins parachuting over a dusk horizon under the Plaid top bar; the dock auto-hides until the pointer reaches the bottom edge.](docs/img/desktop.png)
+![Plaid Pi on a 32-inch 4K monitor at 120 Hz: tartan-canopied penguins parachuting over a dusk horizon under the Plaid top bar; the dock auto-hides until the pointer reaches the bottom edge.](docs/img/desktop.png)
 
 ## What it is
 
-Everything below was checked on an Orange Pi 5B running the 5.0 release image (2026-10-19: 133 of 133 first-boot
-checks passed, and again after all seven first-click apps and Pro Updates had run), unless an item says it was
-measured on 4.0.
+Everything below was checked on an Orange Pi 5B: on the 5.0 release image (2026-10-19: 133 of 133 first-boot checks
+passed, and again after all seven first-click apps and Pro Updates had run) and again on the 5.5 release image
+(2026-10-22: 147 of 147), unless an item says it was measured on 4.0.
 
 - **4K at 120 Hz over HDMI, out of the box.** The vendor kernel reaches HDMI 2.1 FRL with our clock patches.
   The three ways it failed on the way there — a black screen after 14 minutes to 3 hours, a hard hang when the
@@ -30,18 +30,38 @@ measured on 4.0.
   MPP library. Measured on 4.0 (2026-10-03): Chromium decodes a 4K HEVC **Main 10** file on the video engine — 595
   frames, none dropped, about a fifth of the CPU (21 % across its processes) — so Jellyfin direct-plays 10-bit
   without transcoding, out of the box; Chromium is 155 in 5.0. H.264, 8-bit HEVC and VP9 likewise, and VP9 now
-  runs on both decoder cores (25–29 % more throughput; the fix is submitted upstream as rockchip-linux/mpp#976).
+  runs on both decoder cores (see Dual-core VP9 below).
   **AV1** is new in 5.0: Firefox (first-click install, with our small Mali library loaded by its launcher) plays
   YouTube 4K60 AV1 on the video engine with 1.2–1.5 % of frames dropped after start-up, where driver 3.0.0 dropped
   91–95 %; Chromium and Chrome start AV1 playback clean in 10 of 10 measured first plays (VID-5). mpv 0.41 goes
   through VA-API, with profiles that keep DVDs and Blu-rays from stuttering at 120 Hz.
+- **The Number Nine Pepper video driver.** Our VA-API driver, rockchip-vaapi 3.5.0 "Pepper SGT", hands video to the
+  RK3588's video engine, so Chromium, Chrome, Firefox and mpv decode H.264, HEVC, VP9 and AV1, 8- and 10-bit, in
+  hardware (KNOWN-ISSUES lists the exceptions). For AV1 it rebuilds the headers MPP needs from the VA-API parameters,
+  and with our MPP build each picture is decoded once. A fork of Eduardo García-Mádico Portabella's driver:
+  [defcom5-rockchip/rockchip-vaapi](https://github.com/defcom5-rockchip/rockchip-vaapi). *Number Nine* is a tribute to
+  the 1980s graphics-card maker, whose Pepper co-processor boards name the releases; not affiliated with or endorsed
+  by Number Nine or the successors to its assets.
+- **Dual-core VP9.** The RK3588's two video decoder cores work on VP9 together again. A frame label that the hardware
+  compares in 16 bits made both cores reset after 65,536 frames (about 18 minutes of 60 fps video), so upstream MPP
+  and Plaid Pi 4.0 decoded VP9 on one core. Our fix wraps the label where the hardware does; Rockchip's reviewer
+  accepted it ([rockchip-linux/mpp#976](https://github.com/rockchip-linux/mpp/pull/976)). In Rockchip's test decoder,
+  4K60 VP9 runs 44 % faster for 10-bit and 29 % for 8-bit than on one core.
+- **Full-screen video capable.** 4K video decoded on the video engine — H.264, HEVC, VP9 and AV1, 8- and 10-bit —
+  and drawn zero-copy by mpv, full screen on a 4K monitor at 120 Hz; the screensaver already loops a film full screen.
+  10-bit 4K at 60 fps uses most of the GPU ([KNOWN-ISSUES VID-6](KNOWN-ISSUES.md#vid-6-10-bit-4k60-in-mpv-leaves-little-gpu-headroom)).
+- **Films from a NAS without skips (new in 5.5).** **Network Drive** (Utilities, or right-click a share in Files ▸
+  *Add as Network Drive…*) adds the share as a drive that reads 32 MiB ahead, so a short pause on the NAS doesn't
+  interrupt the film; in a two-hour test a 4K AV1 film played from one in Firefox with no decoder stall
+  ([KNOWN-ISSUES NET-1](KNOWN-ISSUES.md#net-1-films-played-straight-from-a-nas-share-smb-can-skip-with-the-sound-cutting-out)).
 - **Wi-Fi joins WPA3 and WPA2/WPA3 networks.** Ubuntu 26.04's wpa_supplicant signals WPA3 in a way the vendor
-  Wi-Fi driver never handled, so every modern home network refused the board. Patch 0006 fixes the driver
+  Wi-Fi driver never handled, so every modern home network refused the board. Patch 0006 fixes the driver, and
+  Armbian merged it into its vendor-kernel branch on 2026-10-21
   ([armbian/linux-rockchip#561](https://github.com/armbian/linux-rockchip/pull/561)); Wi-Fi 6 rates measured on 5 GHz.
 - **Bluetooth that survives Wi-Fi.** The two AP6275P fixes from 2.0.x — the boot race and the coexistence
   timing — are carried over with the self-healing sentinel. The ten-second mute at every YouTube ad on a
   Bluetooth speaker is gone (bluez's mpris-proxy was telling the speaker "stopped"; it is off).
-- **Audio.** PipeWire 1.6.9 and WirePlumber 0.5.17 with real-time priority from boot. The 3.5 mm jack works
+- **Audio.** PipeWire 1.6.10 and WirePlumber 0.5.18 with real-time priority from boot. The 3.5 mm jack works
   (the vendor codec driver shipped it switched off) and follows plugging like a laptop; HDMI is the default
   output and the outputs are named. Rhythmbox 3.5.1 — newest upstream, every feature on — Audacity 3.7.8 and
   Brasero.
@@ -50,7 +70,7 @@ measured on 4.0.
 - **Fixes you would otherwise find yourself.** GUI password prompts hang on Ubuntu 26.04 with a 6.1 kernel
   (polkit's new helper wants Linux 6.5) — fixed. A large file copy could get the whole session killed by
   systemd-oomd — fixed. The first boot asks for a computer name instead of every board having the same name.
-- **A small image; apps on first click.** 1.38 GiB compressed (1,486,451,853 bytes). Firefox, LibreOffice, GIMP,
+- **A small image; apps on first click.** 1.39 GiB compressed (1,488,903,509 bytes). Firefox, LibreOffice, GIMP,
   Inkscape, Thunderbird, VSCodium and Google Chrome sit in the app grid (Chrome and Firefox in the dock too) as
   placeholders that download the real app from its own repository on the first click, then step aside. All seven
   ran on the 5.0 image on hardware (Firefox 158 from the Mozilla Team PPA, Chrome 155); six were timed on 4.0,
@@ -58,6 +78,8 @@ measured on 4.0.
 - **No snaps. No telemetry of our own.** What the Ubuntu and Armbian base still talks to is listed, with what we
   found, in [PRIVACY.md](PRIVACY.md). Armbian's browser policies (its start page and bookmarks, which made Chromium
   and Chrome say "Managed by your organization") are not applied on 5.0.
+- **No default passwords.** The first boot has you set your own; root cannot log in over SSH with a password, only
+  with a key; system changes ask for your password, and Network Drive logins are stored readable by root only.
 - **Updates that cannot undo the work.** Ubuntu's security updates and the browsers' own repositories update daily
   by themselves; Pro Updates 1.5.0 shows and applies the rest when you open it. The kernel, device
   tree, bootloader, BSP and firmware packages are held and change only with Plaid Pi releases — otherwise
@@ -67,9 +89,12 @@ measured on 4.0.
 
 ## Honest scope
 
-Built and tested on the Orange Pi 5B; readers reported that the earlier 2.0.x image also boots on the original
-Orange Pi 5, nobody has reported 4.0 or 5.0 yet — "supported as reported", see
-[KNOWN-ISSUES HW-1](KNOWN-ISSUES.md#hw-1-orange-pi-5-the-original-not-the-b--reported-to-boot-untested-by-us).
+**Supported boards:** the **Orange Pi 5B**, which the image is built for and tested on, and the original
+**Orange Pi 5**, which uses the same image: same chip, and the 5B's device tree is the 5's plus the eMMC and the
+Wi-Fi/Bluetooth module, minus the SPI flash. We have no Orange Pi 5 to test on, so the 5 is supported through
+[issues](../../issues), pull requests to the [recipe](https://github.com/defcom5-rockchip/pi-desktop-recipe) and [Discussions](../../discussions); readers
+reported that the earlier 2.0.x image boots on it, and nobody has reported 4.0 or later on a 5 yet (see [KNOWN-ISSUES HW-1](KNOWN-ISSUES.md#hw-1-orange-pi-5-the-original-not-the-b--supported-runs-the-5b-image-untested-by-us)).
+**Planned:** the Orange Pi 5 Plus (a different board: full RK3588, two 2.5 GbE ports), for a later release.
 
 One maintainer, a vendor 6.1 kernel, best effort. It ships a [KNOWN-ISSUES](KNOWN-ISSUES.md) file on purpose —
 we'd rather tell you what's rough than let you find out. Suspend is disabled. 10-bit video is hardware-decoded in
@@ -86,7 +111,7 @@ and no commercial product behind this. [SECURITY.md](SECURITY.md) says how to re
 
 ## Download
 
-**Plaid Pi 5.0** — [Releases](../../releases): `Plaid-Pi-5.0-orangepi5b.img.zst` (1.38 GiB; 6.46 GiB written; a
+**Plaid Pi 5.5** — [Releases](../../releases): `Plaid-Pi-5.5-orangepi5b.img.zst` (1.39 GiB; 6.46 GiB written; a
 16 GB card or more) and its `.sha256`. Verify the checksum, write
 the image to a microSD card or the eMMC (GNOME Disks, balenaEtcher or `dd`), boot. The first boot grows the
 filesystem to the card, then asks (in a text console) for a root password, then a user, a password and a computer name. Step by step on the

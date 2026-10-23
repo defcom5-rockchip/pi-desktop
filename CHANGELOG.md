@@ -1,5 +1,62 @@
 # Changelog
 
+## 5.5 — 2026-10-22
+
+Same base as 5.0 (Ubuntu 26.04, GNOME 50, kernel `6.1.189-vendor-rk35xx`, tag `pi-desktop-5.0`).
+
+### Boards
+- **The original Orange Pi 5 is now listed as supported** next to the 5B. It uses the same image; we have none to test
+  on, so it is supported through issues, pull requests to the recipe and Discussions (KNOWN-ISSUES HW-1). The Orange Pi 5 Plus is
+  planned for a later release.
+
+### Added
+- **Network Drive** (Utilities, and **Add as Network Drive…** in the Files right-click menu on an `smb://` share or inside one):
+  adds a NAS share as a network drive, a kernel CIFS mount under `/mnt/<name>` that reads ahead 32 MiB. In a two-hour
+  test, a 4K AV1 film played from a network drive in Firefox with no decoder stall; 32 MiB covers about 30 seconds of
+  an 8–9 Mbit/s film, less of a high-bitrate one (KNOWN-ISSUES NET-1). One `/etc/fstab` line per drive after a marker
+  comment, mounted on first access by a systemd automount and unmounted after 15 idle minutes; it never blocks boot.
+  The login is kept in `/etc/pidesktop/netdrive/<name>.cred` (root only, 0600); the window passes the password to the
+  root helper on its standard input, never on a command line. Read-only by default. If the share refuses the login or
+  doesn't answer, nothing is changed, and the window asks for the user name when only a password is typed (2026-10-22).
+
+### Changed
+- **MPP `+pd34`:** the VP9 fix in the form Rockchip's reviewer asked for in rockchip-linux/mpp PR #976: the frame
+  label wraps within 1..0xffff on every SoC and the RK3588 exception is gone, so RK3588 decodes VP9 with MPP's default
+  number of frames in flight. `+pd33` forced two. In Rockchip's test decoder (`mpi_dec_test`), synthetic 4K60 clips:
+  214 / 233 fps (10-/8-bit) against 149 / 181 with the one-frame guard; 201,600 frames through three wraps with 0 resets; through rockchip-vaapi, ffmpeg, Firefox
+  and Chromium past the wrap with 0 resets. Also published for Ubuntu 24.04 and 26.04 as the `pd34` release of
+  defcom5-rockchip/mpp (2026-10-20).
+- **mpv `+pd2`:** a larger cache for films on network shares (`demuxer-max-bytes=512MiB`,
+  `demuxer-max-back-bytes=128MiB`, `cache-pause-wait=10`). mpv already caches GVfs, CIFS and NFS paths; the 150 MiB
+  default lasted about 30 seconds at 40 Mbit/s. Local files are unaffected. `+pd2` is built with Ubuntu's standard
+  compiler flags (link-time optimisation, frame pointers), like Ubuntu's own mpv; `+pd1` was built without them.
+  Side by side on four 4K60 clips the two play the same: same dropped frames and GPU load, pixel-identical pictures
+  (output at 1080p60, not 4K@120; 2026-10-21).
+- **PipeWire 1.6.10 and WirePlumber 0.5.18** (from 1.6.9 / 0.5.17). PipeWire 1.6.10 is a bugfix release: crashes in the
+  JACK layer, pops when draining unsigned formats, a regression in the rear-channel upmix delay, unbounded queuing
+  for paused PulseAudio clients and the ALSA plugin's handling of xruns. WirePlumber 0.5.18 adds fixes and small
+  improvements: profiles are ranked by which outputs are plugged in, HDMI outputs take the monitor's name, and a
+  failing ALSA device is retried at most three times. Upstream 1.6.10 on Debian's 1.6.9-2
+  packaging (its CVE-2026-14330 patch kept: the fix is not in 1.6.10) and Debian's WirePlumber 0.5.18-1, rebuilt for
+  26.04 as `~pd55` with the same features as 5.0's packages. Tried on the test board before packaging, with Plaid Pi's
+  audio settings: HDMI, the 3.5 mm jack, DisplayPort, a USB audio interface and a Bluetooth speaker on SBC-XQ played
+  with no errors, and again with the packages in the 5.5 image (2026-10-22).
+- **Chromium and Chrome** start with Chromium's media buffer setting at 60 seconds instead of 10
+  (`JointMediaOptimizer:SrcMediaMultiBufferPreloadSeconds/60`, present in Chromium 155). Per Chromium's source that is
+  up to 50 MiB ahead, about 50 seconds of a typical 8–9 Mbit/s film and less of a high-bitrate one; not yet measured
+  on the board (2026-10-21).
+
+### Security
+- **skb_zerocopy (ZDI-CAN-33367), local privilege escalation, no upstream fix yet:** the two modules that call it,
+  `nfnetlink_queue` and `openvswitch`, are blocked in the CVE-mitigation modprobe file. Any user could get both loaded
+  (openvswitch without even a user namespace) and use them inside a user namespace; checked on the board.
+  KNOWN-ISSUES SYS-5 (2026-10-22).
+
+### Upstream
+- **armbian/linux-rockchip#561 merged (2026-10-21):** patch 0006, WPA3 and WPA2/WPA3 networks in the AP6275P's
+  `bcmdhd` driver, is merged into Armbian's vendor-kernel branch `rk-6.1-rkr7.2`. Plaid Pi keeps 0006 until its kernel base
+  moves past the merge.
+
 ## 5.0 — 2026-10-19
 
 A 4.5 was built on 2026-10-11 and passed its image checks but was never published: the same day the project was

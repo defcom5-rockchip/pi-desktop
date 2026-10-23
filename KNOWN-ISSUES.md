@@ -3,15 +3,15 @@
 Plaid Pi (formerly Pi-Desktop) is a niche distro with a single maintainer, running on the Rockchip vendor 6.1 kernel.
 This file exists on purpose. We'd rather tell you what's rough than let you find out.
 
-Current as of **Plaid Pi 5.0** (release image on an Orange Pi 5B, 2026-10-19: 133 of 133 first-boot checks), with
-the 4.0 findings kept where they still apply. The 2.0.x
+Current as of **Plaid Pi 5.5** (release image on an Orange Pi 5B, 2026-10-22: 147 of 147 first-boot checks), with
+the 5.0 and 4.0 findings kept where they still apply. The 2.0.x
 sections further down are the retired line's history and stay as they were.
 
 ---
 
-## 4.0 and 5.0
+## 4.0, 5.0 and 5.5
 
-Each entry applies to both 4.0 and 5.0 unless its status line says otherwise. Problems that 5.0 fixes are listed
+Each entry applies to 4.0, 5.0 and 5.5 unless its status line says otherwise. Problems that 5.0 fixes are listed
 under [Fixed in 5.0](#fixed-in-50), with the one-time fix for 4.0 where there is one.
 
 ### PWR-1: No suspend
@@ -101,6 +101,10 @@ At 10-bit 4K60 the GPU is close to its limit, and settings that add GPU work pus
 `--vo=gpu` renderer: 396; `--video-sync=display-resample` instead of the image's audio sync: 13.5 s of video in 20 s.
 10-bit at 24-30 fps has plenty of room. Chromium and Chrome also play 10-bit 4K60 on the video engine with a correct
 picture (checked by eye, 2026-10-09).
+
+5.5's mpv (`+pd2`, built with Ubuntu's compiler flags) was measured side by side with `+pd1` on 2026-10-21 on four 4K60
+clips: the same dropped frames and GPU load, and pixel-identical pictures. That run had the output at 1080p60, so the
+4K@120 table above is still `+pd1`'s.
 
 Plaid Pi's mpv is held. If Ubuntu's mpv replaces it anyway (after `apt-mark unhold mpv` and an upgrade), dpkg
 installs Ubuntu's own `/etc/mpv/mpv.conf` without asking, because the file still matches Plaid Pi's package. That
@@ -232,6 +236,34 @@ wizard; the service stays as a safety net.
 
 ---
 
+### NET-1: Films played straight from a NAS share (smb://) can skip, with the sound cutting out
+
+**Status:** worked around in 5.5 (Network Drive) · **Severity:** moderate for NAS film libraries
+
+Opening a film from a share in Files (`smb://…`) gives programs a GVfs path (`/run/user/…/gvfs/…`). GVfs reads such
+files one small request at a time, as the program asks, with no read-ahead. If the NAS stops answering for several
+seconds or more — a disk spinning up, another job on the NAS — Firefox has about two seconds of sound and half a second of
+picture in hand, so the picture skips and the sound drops out together; Chrome holds about 12–14 seconds (10 seconds
+of file read ahead plus about 2 seconds of unpacked video). It happens most in action scenes, where the film's
+bitrate is highest. mpv is far less affected: it keeps minutes of a typical film in memory (on 5.0, about 30 seconds
+of a 40 Mbit/s remux).
+
+Seen on an Orange Pi 5B with a 4K24 AV1 film from a Synology NAS: on the GVfs path, two skips with the sound cutting
+out in about 30 minutes in Firefox; a monitor later logged an 8-second NAS pause that Firefox rode out (probably the
+page cache). From the same share as a network drive (kernel CIFS mount, 32 MiB read-ahead), 10 minutes of playback
+with no decoder stall, the film arriving in bursts of about 35 MB every 26–70 seconds; the whole two-hour film then
+played through with no decoder stall (2026-10-21).
+
+**Fix in 5.5:** open **Network Drive** from Utilities, or in Files right-click the share (or an empty spot inside it)
+and choose **Add as Network Drive…**. It mounts the share under `/mnt/<name>`, gives it its own entry in the Files
+sidebar, connects when something opens it and disconnects after 15 idle minutes. Open films from that entry, not from
+the Network page. From 5.5, Chromium and Chrome also start with a 60-second media buffer setting (per Chromium's
+source up to 50 MiB, about 50 seconds of a typical 8–9 Mbit/s film; not yet measured). **On 5.0:** play NAS films in mpv, or mount the share by hand with `mount -t cifs`, the `cache=loose`
+and `rasize=33554432` options (with the default `cache=strict` the read-ahead can silently do nothing) and a
+root-only `credentials=` file (never a password typed into the mount command).
+
+---
+
 ### APP-2: mpv cannot open smb:// links
 
 **Status:** upstream · **Severity:** minor
@@ -295,6 +327,36 @@ sudo systemctl daemon-reload
 ```
 
 After it, PipeWire runs at its configured FIFO 88 and Chrome's audio thread at RR 8, measured on the development board.
+
+---
+
+### SYS-5: A network-core kernel bug lets a local program become root (ZDI-CAN-33367)
+
+**Status:** worked around in 5.5; kernel fix not yet published (2026-10-22) · **Severity:** high (local privilege
+escalation) · **Affects:** 4.0 and 5.0
+
+A bug in the kernel's `skb_zerocopy()`, disclosed on 2026-10-22 with no fix yet, lets a program running as any user
+gain root. In Plaid Pi's kernel only two modules call it: the Netfilter packet queue (`nfnetlink_queue`) and Open
+vSwitch (`openvswitch`). Plaid Pi uses neither, but any user can get both loaded (openvswitch without even a user
+namespace) and use them inside a user namespace (checked on an Orange Pi 5B with Plaid Pi's 6.1.189 kernel). 5.5 blocks both in `/etc/modprobe.d/99-defcom5-cve-mitigations.conf`, the file that already blocks the Dirty
+Frag and PinTheft modules. The kernel fix replaces the block once it is published.
+
+On 5.0 or 4.0, add the same two lines:
+
+```
+printf 'install nfnetlink_queue /bin/false\ninstall openvswitch /bin/false\n' | sudo tee -a /etc/modprobe.d/99-defcom5-cve-mitigations.conf
+```
+
+They apply at once to modules that are not loaded yet. `lsmod | grep -E 'nfnetlink_queue|openvswitch'` should print
+nothing; reboot if it does. Programs that inspect packets through the queue, such as the OpenSnitch firewall or
+Suricata in inline mode, stop working. If you need one of them, comment out just its line and reboot, knowing that
+this reopens the bug:
+
+```
+sudo sed -i 's/^install nfnetlink_queue /#&/' /etc/modprobe.d/99-defcom5-cve-mitigations.conf
+```
+
+Open vSwitch users do the same for `openvswitch`.
 
 ---
 
@@ -379,18 +441,18 @@ upstream at github.com/narkagni/dhruva; tell us too.
 
 ---
 
-### HW-1: Orange Pi 5 (the original, not the B) — reported to boot; untested by us
+### HW-1: Orange Pi 5 (the original, not the B) — supported, runs the 5B image; untested by us
 
-**Status:** reported working by readers; not tested here · **Severity:** informational
+**Status:** supported through issues, pull requests to the recipe and Discussions; not tested here · **Severity:** informational
 
 The image is built for the Orange Pi 5B. Readers reported (CNX Software comments, 2026) that the 2.0.x image boots on
-the original Orange Pi 5; 4.x has not been reported yet, and its bootloader differs (Armbian's vendor U-Boot built for
-the 5B). That it should work fits: same SoC, and the 5B's device tree is the 5's plus the eMMC and the Wi-Fi/Bluetooth
+the original Orange Pi 5; nothing from 4.0 on (4.0, 5.0, 5.5) has been reported yet, and since 4.0 the bootloader differs
+(Armbian's vendor U-Boot built for the 5B). That it should work fits: same SoC, and the 5B's device tree is the 5's plus the eMMC and the Wi-Fi/Bluetooth
 module, minus the SPI flash, so display, video, audio, USB and the 5's M.2 NVMe slot are set up identically.
-"Supported as reported" means: nothing here is tested on a 5; reports from owners are taken seriously and fixes that
-can be made blind will be made; we will not buy a 5. What is different on a 5:
+Supported means: nothing here is tested on a 5; reports from owners in [issues](../../issues), pull requests to the
+[recipe](https://github.com/defcom5-rockchip/pi-desktop-recipe) and [Discussions](../../discussions) are taken seriously and fixes that can be made blind will be made; we will not buy a 5. What is different on a 5:
 
-- No onboard Wi-Fi or Bluetooth. Use a USB adapter (the kernel carries the common Realtek USB drivers). On 5.0 the
+- No onboard Wi-Fi or Bluetooth. Use a USB adapter (the kernel carries the common Realtek USB drivers). From 5.0 the
   Bluetooth helpers notice the missing module (no Broadcom device on PCIe and no eMMC) and stand down;
   `cat /run/pidesktop-bt-absent` shows that they did. On 4.0 they retry for ever: a "Restoring Bluetooth adapter..."
   notice and, 45 s later, "Bluetooth could not be restored", about every two minutes while you are logged in.
