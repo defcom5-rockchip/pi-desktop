@@ -1,11 +1,11 @@
 # Plaid Pi (formerly Pi-Desktop)
 ### The Orange Pi 5 and 5B, as a desktop computer.
 
-**Plaid Pi 5.5** · [Download](#download) · [Known issues](KNOWN-ISSUES.md) · [Changelog](CHANGELOG.md) ·
+**Plaid Pi 6.0** · [Download](#download) · [Known issues](KNOWN-ISSUES.md) · [Changelog](CHANGELOG.md) ·
 [Privacy](PRIVACY.md) · [Legal](LEGAL.md) · [Security](SECURITY.md) · [Website](https://defcom5-rockchip.github.io/pi-desktop/)
 
 > The 2.0.x line on `ubuntu-rockchip` was retired at v2.0.2 (2026-09-23); 4.0 was its successor on a new base;
-> 5.0 (2026-10-19) continued it under the new name, and 5.5 is the current release — see the [CHANGELOG](CHANGELOG.md).
+> 5.0 (2026-10-19) continued it under the new name, then 5.5, and 6.0 is the current release — see the [CHANGELOG](CHANGELOG.md).
 
 A GNOME 50 desktop image for the Orange Pi 5B and Orange Pi 5 (RK3588S), built from Ubuntu 26.04 packages with the Armbian
 build framework, on Armbian's Rockchip vendor kernel merged with upstream stable Linux 6.1.189 plus the Plaid Pi
@@ -16,8 +16,8 @@ kernel patches. Not affiliated with or endorsed by Canonical or Armbian. Not a R
 ## What it is
 
 Everything below was checked on an Orange Pi 5B: on the 5.0 release image (2026-10-19: 133 of 133 first-boot checks
-passed, and again after all seven first-click apps and Pro Updates had run) and again on the 5.5 release image
-(2026-10-22: 147 of 147), unless an item says it was measured on 4.0.
+passed, and again after all seven first-click apps and Pro Updates had run), again on the 5.5 release image
+(2026-10-22: 147 of 147) and on the 6.0 release image (2026-10-26: 152 of 152), unless an item says it was measured on 4.0.
 
 - **4K at 120 Hz over HDMI, out of the box.** The vendor kernel reaches HDMI 2.1 FRL with our clock patches.
   The three ways it failed on the way there — a black screen after 14 minutes to 3 hours, a hard hang when the
@@ -26,7 +26,7 @@ passed, and again after all seven first-click apps and Pro Updates had run) and 
 - **A flicker-free desktop and browser.** The GPU's proprietary user-space driver instead of Mesa panfork, and AFBC scanout
   rejected in the kernel (patch 0001). The Chromium typing and thumbnail flicker of 2.0.x is gone.
 - **Hardware video, including 10-bit and AV1, in the browser that ships with it.** Our
-  [rockchip-vaapi](https://github.com/defcom5-rockchip/rockchip-vaapi) driver, 3.5.0, on our build of Rockchip's
+  [rockchip-vaapi](https://github.com/defcom5-rockchip/rockchip-vaapi) driver, 4.0.0, on our build of Rockchip's
   MPP library. Measured on 4.0 (2026-10-03): Chromium decodes a 4K HEVC **Main 10** file on the video engine — 595
   frames, none dropped, about a fifth of the CPU (21 % across its processes) — so Jellyfin direct-plays 10-bit
   without transcoding, out of the box; Chromium is 155 in 5.0. H.264, 8-bit HEVC and VP9 likewise, and VP9 now
@@ -35,9 +35,10 @@ passed, and again after all seven first-click apps and Pro Updates had run) and 
   YouTube 4K60 AV1 on the video engine with 1.2–1.5 % of frames dropped after start-up, where driver 3.0.0 dropped
   91–95 %; Chromium and Chrome start AV1 playback clean in 10 of 10 measured first plays (VID-5). mpv 0.41 goes
   through VA-API, with profiles that keep DVDs and Blu-rays from stuttering at 120 Hz.
-- **The Number Nine Pepper video driver.** Our VA-API driver, rockchip-vaapi 3.5.0 "Pepper SGT", hands video to the
+- **The Number Nine Pepper video driver.** Our VA-API driver, rockchip-vaapi 4.0.0 "Pepper Pro", hands video to the
   RK3588's video engine, so Chromium, Chrome, Firefox and mpv decode H.264, HEVC, VP9 and AV1, 8- and 10-bit, in
-  hardware (KNOWN-ISSUES lists the exceptions). For AV1 it rebuilds the headers MPP needs from the VA-API parameters,
+  hardware (KNOWN-ISSUES lists the exceptions). 4.0.0 rebuilds the H.264 and HEVC headers per picture, so most of the
+  streams earlier releases decoded wrong now decode bit-exact (VID-8: H.264 conformance 74 → 111 of 135, HEVC 17 → 141 of 147). For AV1 it rebuilds the headers MPP needs from the VA-API parameters,
   and with our MPP build each picture is decoded once. A fork of Eduardo García-Mádico Portabella's driver:
   [defcom5-rockchip/rockchip-vaapi](https://github.com/defcom5-rockchip/rockchip-vaapi). *Number Nine* is a tribute to
   the 1980s graphics-card maker, whose Pepper co-processor boards name the releases; not affiliated with or endorsed
@@ -49,7 +50,14 @@ passed, and again after all seven first-click apps and Pro Updates had run) and 
   4K60 VP9 runs 44 % faster for 10-bit and 29 % for 8-bit than on one core.
 - **Full-screen video capable.** 4K video decoded on the video engine — H.264, HEVC, VP9 and AV1, 8- and 10-bit —
   and drawn zero-copy by mpv, full screen on a 4K monitor at 120 Hz; the screensaver already loops a film full screen.
-  10-bit 4K at 60 fps uses most of the GPU ([KNOWN-ISSUES VID-6](KNOWN-ISSUES.md#vid-6-10-bit-4k60-in-mpv-leaves-little-gpu-headroom)).
+  10-bit 4K at 60 fps uses most of the GPU ([KNOWN-ISSUES VID-6](KNOWN-ISSUES.md#vid-6-10-bit-4k60-in-mpv-leaves-little-gpu-headroom)),
+  and 4K60 10-bit AV1 drops most frames in mpv for now ([VID-9](KNOWN-ISSUES.md#vid-9-av1-at-4k60-10-bit-drops-most-frames-in-mpv)).
+- **Netflix and Prime Video in the browsers (new in 6.0).** Install Google Chrome with one click; Chromium and Firefox
+  then use Chrome's Widevine module too, so keep Chrome installed (nothing is copied; it stays Google's install).
+  Checked on the 6.0 test builds: Netflix plays in Chrome, Chromium and Firefox, Prime Video in Firefox and Chrome, and
+  the sign-ins survive a reboot; other services using Widevine were not tried. Linux gets Widevine's software level,
+  so the video is decoded by the CPU, not the video engine, and services choose the quality: Netflix sent 1080p at
+  24 fps, Prime Video standard definition.
 - **Films from a NAS without skips (new in 5.5).** **Network Drive** (Utilities, or right-click a share in Files ▸
   *Add as Network Drive…*) adds the share as a drive that reads 32 MiB ahead, so a short pause on the NAS doesn't
   interrupt the film; in a two-hour test a 4K AV1 film played from one in Firefox with no decoder stall
@@ -70,7 +78,7 @@ passed, and again after all seven first-click apps and Pro Updates had run) and 
 - **Fixes you would otherwise find yourself.** GUI password prompts hang on Ubuntu 26.04 with a 6.1 kernel
   (polkit's new helper wants Linux 6.5) — fixed. A large file copy could get the whole session killed by
   systemd-oomd — fixed. The first boot asks for a computer name instead of every board having the same name.
-- **A small image; apps on first click.** 1.39 GiB compressed (1,488,903,509 bytes). Firefox, LibreOffice, GIMP,
+- **A small image; apps on first click.** 1.39 GiB compressed (1,496,576,700 bytes). Firefox, LibreOffice, GIMP,
   Inkscape, Thunderbird, VSCodium and Google Chrome sit in the app grid (Chrome and Firefox in the dock too) as
   placeholders that download the real app from its own repository on the first click, then step aside. All seven
   ran on the 5.0 image on hardware (Firefox 158 from the Mozilla Team PPA, Chrome 155); six were timed on 4.0,
@@ -111,7 +119,7 @@ and no commercial product behind this. [SECURITY.md](SECURITY.md) says how to re
 
 ## Download
 
-**Plaid Pi 5.5** — [Releases](../../releases): `Plaid-Pi-5.5-orangepi5b.img.zst` (1.39 GiB; 6.46 GiB written; a
+**Plaid Pi 6.0** — [Releases](../../releases): `Plaid-Pi-6.0-orangepi5b.img.zst` (1.39 GiB; 6.50 GiB written; a
 16 GB card or more) and its `.sha256`. Verify the checksum, write
 the image to a microSD card or the eMMC (GNOME Disks, balenaEtcher or `dd`), boot. The first boot grows the
 filesystem to the card, then asks (in a text console) for a root password, then a user, a password and a computer name. Step by step on the
@@ -140,7 +148,7 @@ Don't trust the image; audit the recipe.
   Plaid Pi patches applied (all but 0016 also as commits on the tag; 0016 patches drivers Armbian adds at build time), tag `pi-desktop-5.0` (4.0: tag `pi-desktop-4.0`):
   [defcom5-rockchip/linux-rockchip](https://github.com/defcom5-rockchip/linux-rockchip).
 - **Video driver** — [defcom5-rockchip/rockchip-vaapi](https://github.com/defcom5-rockchip/rockchip-vaapi),
-  release [v3.5.0](https://github.com/defcom5-rockchip/rockchip-vaapi/releases/tag/v3.5.0).
+  release [v4.0.0](https://github.com/defcom5-rockchip/rockchip-vaapi/releases/tag/v4.0.0).
 
 [LEGAL.md](LEGAL.md) has the complete corresponding-source table, the licences and the trademark notes.
 

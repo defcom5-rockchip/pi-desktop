@@ -26,7 +26,7 @@ The loader sits in the first megabytes of the device, before the partitions. Rea
 sudo head -c 16M /dev/mmcblk0 | strings -n 10 | grep -m1 'U-Boot SPL'
 ```
 
-A Plaid Pi (4.0 or 5.0) loader reports Armbian's build, which looks like
+A Plaid Pi (4.0 or later) loader reports Armbian's build, which looks like
 `U-Boot SPL 2017.09_armbian-2017.09-S39cd-…-Bxxxx (a 2026 date - …)`. The "2017.09" is what Rockchip's
 U-Boot fork calls itself; the date and the `armbian` tag are what matter. An Android or Rockchip vendor
 string, a much older date, or nothing at all means you are booting a foreign loader — use **Method A**.
@@ -69,7 +69,7 @@ occasion. It can be removed again afterwards.)
 ### A2 — the exact release image (a clean copy, nothing carried over)
 
 ```sh
-zstd -dc Plaid-Pi-5.5-orangepi5b.img.zst | sudo dd of=/dev/mmcblk0 bs=4M status=progress conv=fsync
+zstd -dc Plaid-Pi-6.0-orangepi5b.img.zst | sudo dd of=/dev/mmcblk0 bs=4M status=progress conv=fsync
 sync
 ```
 
@@ -78,7 +78,7 @@ setup wizard again. The `flash-emmc.sh` script published with each release does 
 put it in the folder with the image and its `.sha256` file and run `sudo bash flash-emmc.sh`. It refuses the
 device you are running from, checks the image's SHA-256 first, asks for a typed confirmation and reads the eMMC
 back to verify the write. (The copy published with 4.0 also asked for a second checksum file that was never
-uploaded; use the 5.0 copy.)
+uploaded; use the copy from 5.0 or later.)
 
 **From a PC instead:** put the board in **maskrom mode** (hold MASKROM while applying power, USB-C to the
 PC) and write the image with Rockchip's `rkdeveloptool` or the RKDevTool GUI. Use this when the board won't
@@ -125,8 +125,8 @@ On a Linux PC (Windows: Rockchip's RKDevTool does the same steps with the same l
 4. Load the loader into the board's RAM: `sudo rkdeveloptool db rk3588_loader_v*.bin`.
 5. Write the image to the eMMC (decompress it first) and restart:
    ```sh
-   zstd -d Plaid-Pi-5.5-orangepi5b.img.zst
-   sudo rkdeveloptool wl 0 Plaid-Pi-5.5-orangepi5b.img
+   zstd -d Plaid-Pi-6.0-orangepi5b.img.zst
+   sudo rkdeveloptool wl 0 Plaid-Pi-6.0-orangepi5b.img
    sudo rkdeveloptool rd
    ```
    For a clean slate first (Method B's reasons), run `sudo rkdeveloptool ef` before `wl`; it erases the whole eMMC

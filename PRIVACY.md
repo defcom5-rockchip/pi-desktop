@@ -51,8 +51,12 @@ dock's music pill off, nothing listening on port 111).
 
 - **Chromium** (xtradeb's build) is upstream Chromium and has Chromium's own network behaviour: Safe Browsing,
   component updates, Google sign-in through the API keys Debian's packaging carries. Google's privacy policy
-  governs the Google services it talks to. Plaid Pi adds only the hardware-video flags; Debian's defaults
-  include `--disable-pings`.
+  governs the Google services it talks to. Plaid Pi adds the hardware-video flags and, once Google Chrome is installed, a
+  pointer to Chrome's Widevine module (below); Debian's defaults include `--disable-pings`.
+- **Protected video (Widevine, 6.0).** Once you install Google Chrome, Chromium and Firefox load the Widevine module Chrome
+  installed in `/opt/google/chrome/WidevineCdm`; Plaid Pi downloads and copies nothing, and Firefox's own Widevine download
+  is switched off. The module talks to a streaming service's licence server only when a page plays protected video,
+  under Google's and that service's policies.
 - **The first-click installers** each contact one place: Google Chrome → `dl.google.com` (the signing key, checked
   against a pinned fingerprint, and the package; Google's apt repository then stays configured so Chrome updates
   from Google); VSCodium → `gitlab.com` (the repository key, pinned fingerprint) and `download.vscodium.com`;

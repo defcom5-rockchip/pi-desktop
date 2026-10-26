@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Plaid Pi — download and install</title>
-<meta name="description" content="Download Plaid Pi 5.5 for the Orange Pi 5 and 5B, verify the checksum, write it to a microSD card or eMMC, and what the first boot does.">
+<meta name="description" content="Download Plaid Pi 6.0 for the Orange Pi 5 and 5B, verify the checksum, write it to a microSD card or eMMC, and what the first boot does.">
 <link rel="stylesheet" href="style.css">
 <link rel="icon" href="img/pi-desktop.svg" type="image/svg+xml">
 </head>
@@ -26,23 +26,23 @@
 <main>
   <div class="wrap">
     <h1>Download and install</h1>
-    <p class="lede">Plaid Pi 5.5 for the Orange Pi 5B and the Orange Pi 5 (Plaid Pi is the new name of Pi-Desktop). One compressed image, <code>Plaid-Pi-5.5-orangepi5b.img.zst</code>, for both boards, and one checksum file; 1.39 GiB (1,488,903,509 bytes) to download.</p>
+    <p class="lede">Plaid Pi 6.0 for the Orange Pi 5B and the Orange Pi 5 (Plaid Pi is the new name of Pi-Desktop). One compressed image, <code>Plaid-Pi-6.0-orangepi5b.img.zst</code>, for both boards, and one checksum file; 1.39 GiB (1,496,576,700 bytes) to download.</p>
 
-    <p><a class="btn" href="https://github.com/defcom5-rockchip/pi-desktop/releases/tag/v5.5.0">Plaid Pi 5.5 on GitHub</a></p>
+    <p><a class="btn" href="https://github.com/defcom5-rockchip/pi-desktop/releases/tag/v6.0.0">Plaid Pi 6.0 on GitHub</a></p>
 
     <h2>What you need</h2>
     <ul>
       <li>An Orange Pi 5B, or the original Orange Pi 5: both use this image. The 5B is the board it is built for and tested on; the 5 is supported through <a href="https://github.com/defcom5-rockchip/pi-desktop/issues">issues</a>, pull requests to the <a href="https://github.com/defcom5-rockchip/pi-desktop-recipe">recipe</a> and <a href="https://github.com/defcom5-rockchip/pi-desktop/discussions">Discussions</a> because we have none to test on (it has no onboard Wi-Fi or Bluetooth and no eMMC — see <a href="https://github.com/defcom5-rockchip/pi-desktop/blob/main/KNOWN-ISSUES.md#hw-1-orange-pi-5-the-original-not-the-b--supported-runs-the-5b-image-untested-by-us">KNOWN-ISSUES HW-1</a>). The Orange Pi 5 Plus is planned for a later release; other RK3588 boards are not supported by this image.</li>
-      <li>A microSD card of 16 GB or more (the image is about 6.5 GiB, 6.9 GB, uncompressed and grows to fill the card on first boot), or the board's eMMC.</li>
+      <li>A microSD card of 16 GB or more (the image is about 6.50 GiB, 7.0 GB, uncompressed and grows to fill the card on first boot), or the board's eMMC.</li>
       <li>An HDMI monitor, keyboard and mouse for the first boot. 120 Hz needs an HDMI 2.1 monitor and cable; 4K at 60 Hz works on any 4K HDMI monitor.</li>
       <li>A power supply rated for the board. A marginal phone charger browns out under load and looks exactly like a software crash.</li>
     </ul>
 
     <h2>1. Verify the checksum</h2>
     <p>Each release ships the image and a <code>.sha256</code> file next to it. On Linux or macOS, in the folder you downloaded to:</p>
-<pre><code>sha256sum -c Plaid-Pi-5.5-orangepi5b.img.zst.sha256
-# expected output: Plaid-Pi-5.5-orangepi5b.img.zst: OK</code></pre>
-    <p>On Windows: <code>certutil -hashfile Plaid-Pi-5.5-orangepi5b.img.zst SHA256</code> and compare with the contents of the <code>.sha256</code> file. The 5.5 image's checksum is <code>aca1459727770e54096e5f6684283d4728e8b8993ad9b72d93f6b2903a690a5d</code>; the release page has it too.</p>
+<pre><code>sha256sum -c Plaid-Pi-6.0-orangepi5b.img.zst.sha256
+# expected output: Plaid-Pi-6.0-orangepi5b.img.zst: OK</code></pre>
+    <p>On Windows: <code>certutil -hashfile Plaid-Pi-6.0-orangepi5b.img.zst SHA256</code> and compare with the contents of the <code>.sha256</code> file. The 6.0 image's checksum is <code>a851c7108c0618765c791a7b1ec0690178bbaf13f49c7fbea95692fd25ed3f16</code>; the release page has it too.</p>
 
     <h2>2. Write the image</h2>
     <p>Writing the image erases the card or eMMC completely. Pick one method.</p>
@@ -60,7 +60,7 @@
     </ol>
     <h3>dd (Linux, macOS)</h3>
     <p>Find the device first (<code>lsblk</code> on Linux, <code>diskutil list</code> on macOS) and make sure it is the card, not your system disk. Replace <code>/dev/sdX</code>:</p>
-<pre><code>zstd -dc Plaid-Pi-5.5-orangepi5b.img.zst | sudo dd of=/dev/sdX bs=4M status=progress conv=fsync
+<pre><code>zstd -dc Plaid-Pi-6.0-orangepi5b.img.zst | sudo dd of=/dev/sdX bs=4M status=progress conv=fsync
 sync</code></pre>
 
     <h2>3. First boot</h2>

@@ -3,16 +3,17 @@
 Plaid Pi (formerly Pi-Desktop) is a niche distro with a single maintainer, running on the Rockchip vendor 6.1 kernel.
 This file exists on purpose. We'd rather tell you what's rough than let you find out.
 
-Current as of **Plaid Pi 5.5** (release image on an Orange Pi 5B, 2026-10-22: 147 of 147 first-boot checks), with
-the 5.0 and 4.0 findings kept where they still apply. The 2.0.x
+Current as of **Plaid Pi 6.0** (release image on an Orange Pi 5B, 2026-10-26: 152 of 152 first-boot checks), with
+the 5.5, 5.0 and 4.0 findings kept where they still apply. The 2.0.x
 sections further down are the retired line's history and stay as they were.
 
 ---
 
-## 4.0, 5.0 and 5.5
+## 4.0, 5.0, 5.5 and 6.0
 
-Each entry applies to 4.0, 5.0 and 5.5 unless its status line says otherwise. Problems that 5.0 fixes are listed
-under [Fixed in 5.0](#fixed-in-50), with the one-time fix for 4.0 where there is one.
+Each entry applies to 4.0, 5.0, 5.5 and 6.0 unless its status line says otherwise. Problems that 6.0 fixes are listed
+under [Fixed in 6.0](#fixed-in-60), those that 5.0 fixes under [Fixed in 5.0](#fixed-in-50), each with the one-time fix
+for the earlier release where there is one.
 
 ### PWR-1: No suspend
 
@@ -83,7 +84,7 @@ Chromium and Chrome both played a 10-bit HDR VP9 4K60 file on the video engine w
 
 ### VID-6: 10-bit 4K60 in mpv leaves little GPU headroom
 
-**Status:** measured 2026-10-09 (5.0, mpv `0.41.0-2ubuntu4+pd1`) · **Severity:** performance · **Affects:** 10-bit
+**Status:** measured 2026-10-09 (5.0, mpv `0.41.0-2ubuntu4+pd1`) and 2026-10-24 (6.0) · **Severity:** performance · **Affects:** 10-bit
 4K video at 50-60 fps in mpv. On 4.0, mpv plays 10-bit through copy-back, which runs 10-bit 4K60 at about half speed.
 
 5.0's mpv draws 8-bit and 10-bit video zero-copy (VID-7). Measured on the development board, full screen on a 4K@120 output,
@@ -105,6 +106,17 @@ picture (checked by eye, 2026-10-09).
 5.5's mpv (`+pd2`, built with Ubuntu's compiler flags) was measured side by side with `+pd1` on 2026-10-21 on four 4K60
 clips: the same dropped frames and GPU load, and pixel-identical pictures. That run had the output at 1080p60, so the
 4K@120 table above is still `+pd1`'s.
+
+**6.0, measured 2026-10-24** (driver 3.5.0; full screen on the 4K@120 output, the image's settings, the same clips): two runs each
+with mpv `+pd2`'s binaries, which `+pd3` ships unchanged: 10-bit HDR10 HEVC 4K60 2 and 1 dropped, 10-bit HDR10 VP9
+4K60 8 and 3, 8-bit H.264 4K60 0 and 1; one run with `+pd3` installed: 2, 1 and 0. The decoder dropped none. During a
+later HEVC run sampled once a second, the GPU sat at 92-100 % load at its 1 GHz maximum (10 dropped in that run), so
+the 10-bit HDR clips can hitch now and then. Watched by the maintainer: when playback starts full screen, the desktop
+wallpaper shows in the top-right corner for a moment (mpv's window covers the screen a frame or two after it goes full
+screen), then the picture is clean. That flash is the same on the 8-bit clip at 35 % GPU load, with the shell
+extensions off or on, and with USB devices unplugged; it is cosmetic and not a decoding or GPU-load problem. The kernel
+logged no display or decoder errors. mpv's binaries, the GPU driver and the kernel are the same as 5.5's, so this is
+likely not new in 6.0, but 5.5 was never measured at 4K@120.
 
 Plaid Pi's mpv is held. If Ubuntu's mpv replaces it anyway (after `apt-mark unhold mpv` and an upgrade), dpkg
 installs Ubuntu's own `/etc/mpv/mpv.conf` without asking, because the file still matches Plaid Pi's package. That
@@ -159,6 +171,59 @@ mpv now does for the brightness plane: no copy), or copy it on the GPU into an o
 8-bit step of it on about 5 % of pixels with no bias (rounding between the GPU's normalised read and an exact integer
 read). Sampling it in mpv's older `vo=gpu` renderer exposed a precision bug in that renderer's integer path (a 1/65535
 factor folded into a multiplier that is printed with six decimals: 2 % dark); the patch fixes that too.
+
+---
+
+### VID-8: H.264 and HEVC streams the hardware path got wrong — fixed in 6.0 except the cases below
+
+**Status:** fixed in 6.0 (rockchip-vaapi 4.0.0) for most streams; open for the cases below · **Severity:** was a wrong
+picture or a stall on specific streams · **Affects:** every release before 6.0 (driver 3.5.0 and earlier); in 6.0 the
+remaining cases below and the weaved output of interlaced H.264
+
+Measured on 2026-10-23 (driver 3.5.0) and 2026-10-25 (4.0.0) with the H.264 and HEVC conformance suites (Fluster,
+`ffmpeg -hwaccel vaapi`), against the suites' reference checksums; everyday web video and the test clips elsewhere in these notes were never affected. Driver
+4.0.0, which 6.0 ships, fixes the causes:
+
+- **H.264 streams with custom scaling matrices** (x264 `--cqm`, many Blu-ray and broadcast encodes) decoded slightly
+  wrong at every bit depth: the driver now writes the stream's matrices into the headers it rebuilds (driver KI-17).
+- **HEVC whose slices use reference-picture sets stored once in the stream's sequence header (SPS)** decoded with wrong references or stalled the
+  decoder; the driver now rewrites those slices with the sets spelled out (driver KI-5), and rebuilds the HEVC picture
+  parameters for every picture, with the stream's scaling lists (KI-22).
+- **H.264 streams that change settings between pictures, use several CAVLC slices per picture, or are 10-bit (High 10)**
+  could decode wrong (driver KI-17, KI-21).
+- **Interlaced H.264** (field, PAFF, MBAFF: TV recordings, some DVD and Blu-ray sources) was mostly refused; it now
+  decodes on the video engine (driver KI-20), **weaved**: the two fields come out as one frame and deinterlacing is up to
+  the player. In mpv you see comb lines on moving edges unless you start it with `--deinterlace=yes`, which deinterlaces
+  in software (checked by eye on 6.0; about 1.1–1.5 cores for 1080i on the 5B, decode still on the video engine).
+  Firefox should decode it on the video engine and show it weaved, as its software decode did (not measured);
+  Chromium and Chrome decode interlaced H.264 in software, as before.
+
+Conformance streams decoded bit-exact on the hardware, 3.5.0 → 4.0.0: H.264 74 → 111 of 135, the High-profile 4:2:0
+streams 6 → 48 of 48 (the suite's 4:2:2 streams are decoded by ffmpeg in software with any driver), HEVC 17 → 141 of 147.
+Still failing conformance in 6.0: H.264 streams that use an uncommon frame-numbering mode (picture order count type 1;
+nine test streams, five of them interlaced), long-term references with reordering (eight test streams), one interlaced
+stream not yet investigated, and features of the Baseline and Extended profiles that real files rarely use (FMO, ASO, SP
+slices; no hardware path); two HEVC picture sizes the hardware refuses, and four HEVC test streams that ffmpeg's own
+software decoder also gets wrong. The driver's KNOWN-ISSUES (KI-5, KI-17, KI-20, KI-21, KI-22) has the lists and the test
+runs.
+
+If a film shows blocking, wrong colours or stops in mpv, try it with hardware decoding off (`mpv --hwdec=no`); if that
+plays correctly, it is one of the remaining cases. Browsers have no such switch; play the file in mpv that way instead.
+
+---
+
+### VID-9: AV1 at 4K60 10-bit drops most frames in mpv
+
+**Status:** open · measured 2026-10-24 (6.0 test image, mpv `+pd2` binaries = `+pd3`'s, MPP `+pd35`, rockchip-vaapi 3.5.0;
+not re-measured with 4.0.0, whose only change after the decoder, a lock in the 10-bit copy, measured equal on HEVC and VP9)
+· **Severity:** performance · **Affects:** 10-bit AV1 at 4K and 50-60 fps in mpv; earlier releases were not measured.
+
+A 20 s 4K60 10-bit AV1 test clip (SVT-AV1, with film grain, tagged HDR10) played full screen on the 4K@120 output: in
+the 10 s after warm-up mpv dropped 408-476 of about 600 frames, with either of its renderers (`gpu`, `gpu-next`). Retagged
+as SDR, and played without the grain, it dropped as many. The decoder keeps up: it dropped nothing and decodes about 60
+frames a second. The same-size HEVC and VP9 clips drop a handful (VID-6), so the cost comes after the decoder; one
+suspect is the driver's conversion of 10-bit AV1 output. Browsers and 4K30 AV1 were not measured. It is being
+investigated for the next video release; meanwhile a 4K30 or 1080p version of the video plays without this.
 
 ---
 
@@ -470,6 +535,28 @@ Supported means: nothing here is tested on a 5; reports from owners in [issues](
 We do not own a 5; if something is wrong there, report it and it will be looked at.
 
 ---
+
+## Fixed in 6.0
+
+- **Browser sign-ins and history lost on reboot** (once a whole Chrome profile). Browser profiles are kept in memory by
+  profile-sync-daemon and written back to the card at shutdown; Ubuntu gave that 5 seconds, and the service's periodic
+  sync part removed the in-memory copies before they were saved. 6.0 allows 60 seconds and keeps the copies until the
+  write-back is done. **On 5.5**, run these commands in a terminal, then reboot:
+
+  ```
+  sudo mkdir -p /etc/systemd/system/user@.service.d && printf '[Service]\nTimeoutStopSec=60\n' | sudo tee /etc/systemd/system/user@.service.d/zz-psd-timeout.conf
+  sudo mkdir -p /etc/systemd/user/psd-resync.service.d && printf '[Service]\nKillMode=process\n' | sudo tee /etc/systemd/user/psd-resync.service.d/keep-overlays.conf
+  sudo systemctl daemon-reload; systemctl --user daemon-reload
+  ```
+  Background: [armbian/configng#1072](https://github.com/armbian/configng/issues/1072).
+- **The first Chrome click on a fresh install said it could not download:** the system's own first-boot updates held
+  the package lock. The installers now wait for it, up to 10 minutes, and say so. **On 5.5**, wait a few minutes after
+  the first login and click again.
+- **AV1 film grain was missing:** the hardware decoder's grain synthesis was never switched on, and mpv's default
+  handed grain to a shader that does not compile on the Mali driver for 10-bit video (it also failed the first frame).
+  6.0's MPP applies the grain in hardware (rockchip-linux/mpp issue #974) and mpv lets the decoder do it
+  (`vd-lavc-film-grain=cpu` in `/etc/mpv/mpv.conf`). **On 5.5** that line stops the failed first frame; the grain itself
+  needs MPP `+pd35` from its [release](https://github.com/defcom5-rockchip/mpp/releases/tag/pd35).
 
 ## Fixed in 5.0
 

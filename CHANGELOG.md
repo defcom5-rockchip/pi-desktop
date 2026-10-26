@@ -1,5 +1,56 @@
 # Changelog
 
+## 6.0 — 2026-10-26
+
+Same base as 5.5 (Ubuntu 26.04, GNOME 50, kernel `6.1.189-vendor-rk35xx`, tag `pi-desktop-5.0`).
+
+### Known
+- **Interlaced H.264 comes out weaved** (KNOWN-ISSUES VID-8): it now decodes on the video engine, and deinterlacing is up
+  to the player. mpv shows comb lines on moving edges unless started with `--deinterlace=yes`, which deinterlaces in
+  software (checked by eye on 6.0, about 1.1–1.5 cores for 1080i). Chromium and Chrome decode interlaced H.264 in
+  software, as before.
+- **4K60 10-bit AV1 in mpv drops most frames** (the decoder keeps up; HEVC and VP9 at 4K60 are fine; browsers not yet
+  measured): KNOWN-ISSUES VID-9, under investigation.
+- **10-bit HDR 4K60 in mpv keeps the GPU at 92-100 %** on a 4K@120 desktop and can hitch now and then; starting any film
+  full screen flashes the wallpaper in the top-right corner for a moment (VID-6; likely as on 5.5, which was not
+  measured at 4K@120).
+
+### Fixed
+- **H.264 and HEVC streams the hardware path got wrong** (VID-8): video driver 4.0.0 "Pepper Pro" rebuilds the stream
+  headers per picture, with the stream's scaling matrices, and handles interlaced H.264, HEVC that uses reference sets
+  stored once in its sequence header (SPS), and per-picture HEVC parameter changes. Conformance streams decoded bit-exact on the hardware
+  (Fluster, through ffmpeg): H.264 74 → 111 of 135, the High-profile 4:2:0 streams 6 → 48 of 48, HEVC 17 → 141 of 147.
+  High 10 (10-bit) H.264 now decodes with the right picture in ffmpeg-based players (checked by eye in Firefox 159 on 6.0).
+  An AV1 stream that grows mid-stream no longer crashes ffmpeg. Measured on the same board with mpv at 4K60 (H.264, 10-bit
+  HEVC and VP9; AV1 not re-measured), drop counts match 3.5.0's within run-to-run noise.
+- **Browser profiles lost on reboot** (sign-ins, history; once a whole Chrome profile). profile-sync-daemon, which keeps
+  browser profiles in memory, could not finish writing them back at shutdown: Ubuntu's systemd gives the user session 5 s
+  to stop, and the service's periodic-sync part (psd 7.00) removed the in-memory copies before they were saved. Two drop-ins (60 s session stop,
+  `KillMode=process` on psd-resync) — verified across reboots on the test board; reported to Armbian (configng#1072).
+- **"Could not download" on the first Chrome click** after a fresh install: the system's own first-boot updates held the
+  package lock. The installers now wait for it (up to 10 minutes) and say so.
+- **AV1 film grain** is now applied by the hardware decoder (MPP +pd35, the fix from rockchip-linux/mpp issue #974):
+  the conformance film-grain vectors decode bit-exact; no other change in the AV1 suites. mpv +pd3 (the +pd2
+  binaries with a new `mpv.conf`) lets the decoder apply it: mpv's default hands grain to a shader that does not compile
+  on the Mali driver for 10-bit video, so the grain was lost and the first frame failed.
+
+### Added
+- **Protected video (DRM) in Chromium and Firefox once Chrome is installed.** Google's arm64 Chrome ships Widevine, the module
+  streaming services use, in `/opt/google/chrome/WidevineCdm`; Chromium is built with Widevine support but ships
+  without the module. Plaid Pi's `/etc/chromium.d/pidesktop-widevine`, which Chromium's launcher runs at every
+  start, writes the one hint file Chromium reads (`~/.config/chromium/WidevineCdm/latest-component-updated-widevine-cdm`,
+  the same JSON Chrome writes in its own profile) pointing at Chrome's folder. Nothing is copied or redistributed;
+  the module stays Google's install under Google's licence. Firefox loads the same module from a folder named in
+  `MOZ_GMP_PATH`: Plaid Pi's Firefox launcher keeps two links to Chrome's files in the user's cache, in a folder that
+  must sit under one named `gmp-widevinecdm` (Firefox derives the library name from it; any other layout crashes its
+  plugin process, and Netflix shows F7701-1003), and the prefs file makes the Widevine switch visible and on (Mozilla
+  ships no Widevine for this platform, so Firefox hides it by default). `media.gmp.decoder.enabled=false` keeps
+  Prime Video from freezing its Firefox tab: a Firefox deadlock when a trailer's decoder starts the media-plugin service
+  while the page checks for Widevine (OpenH264 stays enabled for video calls). Checked on the 6.0 test builds
+  (2026-10-23/24): Netflix plays in Chrome 156, Chromium 156 and Firefox 158, Prime Video in Firefox and Chrome, and the
+  sign-ins survive a reboot; other Widevine services were not tried. Google's module decrypts and
+  decodes in software at this level: Netflix sent 1080p at 24 fps (AV1 to Chrome), Prime Video standard definition.
+
 ## 5.5 — 2026-10-22
 
 Same base as 5.0 (Ubuntu 26.04, GNOME 50, kernel `6.1.189-vendor-rk35xx`, tag `pi-desktop-5.0`).
