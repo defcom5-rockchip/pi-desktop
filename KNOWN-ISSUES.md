@@ -3,23 +3,25 @@
 Plaid Pi (formerly Pi-Desktop) is a niche distro with a single maintainer, running on the Rockchip vendor 6.1 kernel.
 This file exists on purpose. We'd rather tell you what's rough than let you find out.
 
-Current as of **Plaid Pi 6.0** (release image on an Orange Pi 5B, 2026-10-26: 152 of 152 first-boot checks), with
-the 5.5, 5.0 and 4.0 findings kept where they still apply. The 2.0.x
+Current as of **Plaid Pi Plus 6.5** (the Orange Pi 5 Plus KDE image, 2026-11-17: 150 of 150 first-boot checks) and
+**Plaid Pi 6.0** (the Orange Pi 5B GNOME image, 2026-10-26: 152 of 152), with the 5.5, 5.0 and 4.0 findings kept where
+they still apply. The 2.0.x
 sections further down are the retired line's history and stay as they were.
 
 ---
 
-## 4.0, 5.0, 5.5 and 6.0
+## 4.0, 5.0, 5.5, 6.0 and 6.5
 
-Each entry applies to 4.0, 5.0, 5.5 and 6.0 unless its status line says otherwise. Problems that 6.0 fixes are listed
-under [Fixed in 6.0](#fixed-in-60), those that 5.0 fixes under [Fixed in 5.0](#fixed-in-50), each with the one-time fix
-for the earlier release where there is one.
+Each entry applies to 4.0, 5.0, 5.5, 6.0 and 6.5 unless its status line says otherwise; GNOME-only entries (the dock, GDM,
+Settings, the screensaver service) do not apply to the 6.5 KDE image. Problems that 6.5 fixes are listed under [Fixed in 6.5](#fixed-in-65), those
+that 6.0 fixes under [Fixed in 6.0](#fixed-in-60), those that 5.0 fixes under [Fixed in 5.0](#fixed-in-50), each with the
+one-time fix for the earlier release where there is one.
 
 ### PWR-1: No suspend
 
 **Status:** disabled on purpose · **Severity:** feature missing
 
-Suspend, hibernate and hybrid sleep are masked and GNOME's automatic suspend is off, as in 2.0.x.
+Suspend, hibernate and hybrid sleep are masked and the desktop's automatic suspend is off, as in 2.0.x.
 The 2.0.x Ethernet-after-sleep fix is in this kernel, but the sleep device-tree configuration and a
 resume soak were never done on this image, and shipping sleep untested is worse than shipping none.
 Shut down, or let the screensaver run.
@@ -40,7 +42,8 @@ full-screen for 20 s on the release image (driver 2.2.0):
 | video engine in use | **yes** | no |
 
 - **Chromium and Chrome decode 10-bit HEVC on the video engine.** So does 8-bit HEVC, H.264 and VP9. Jellyfin's web
-  client direct-plays 4K Main 10 in Chromium with no server transcode — nothing to install, it is the default browser.
+  client direct-plays 4K Main 10 in Chromium with no server transcode — nothing to install on the GNOME image, where it
+  is the default browser (the KDE image installs Chromium on first click).
 - **Firefox 156 decodes 10-bit in software — and that one is our bug, not Firefox's** (found 2026-10-05). The image
   ships a shim library so Firefox's graphics probe passes on the Mali driver, but the stock copy was parked in the same
   library directory under the same name and the loader picks it first, so the shim never loads and Firefox falls back
@@ -194,7 +197,9 @@ Measured on 2026-10-23 (driver 3.5.0) and 2026-10-25 (4.0.0) with the H.264 and 
 - **Interlaced H.264** (field, PAFF, MBAFF: TV recordings, some DVD and Blu-ray sources) was mostly refused; it now
   decodes on the video engine (driver KI-20), **weaved**: the two fields come out as one frame and deinterlacing is up to
   the player. In mpv you see comb lines on moving edges unless you start it with `--deinterlace=yes`, which deinterlaces
-  in software (checked by eye on 6.0; about 1.1–1.5 cores for 1080i on the 5B, decode still on the video engine).
+  in software (checked by eye on 6.0; about 1.1–1.5 cores for 1080i on the 5B, decode still on the video engine). On
+  6.5, discs opened as folders get the deinterlacer switched on by the Cinemosk script; other interlaced files still need the
+  option.
   Firefox should decode it on the video engine and show it weaved, as its software decode did (not measured);
   Chromium and Chrome decode interlaced H.264 in software, as before.
 
@@ -297,7 +302,12 @@ wizard; the service stays as a safety net.
   hardware (the first-boot check passed 133 of 133 afterwards); six were timed on 4.0 (45 s to 5 min on the
   test card), the Firefox installer was not timed. LibreOffice comes without Base (it drags in Java);
   `sudo apt install libreoffice-base` adds it.
-- **libdvdcss** and AACS keys are not shipped. If a DVD refuses to play: `sudo apt install libdvd-pkg`.
+- **libdvdcss** and AACS keys are not shipped. From 6.5, Cinemosk offers to build libdvdcss on the computer the first time a
+  disc in a drive is played, and its "Disc support" section has the same install (Ubuntu's libdvd-pkg downloads the source
+  and compiles it). On the 5 Plus it took 1 min 50 s from the "Disc support" button and 51 s from the first-time offer
+  (one run each; it includes downloads, so it varies), and a bought DVD then played from its menu. On 6.0, or from a
+  terminal:
+  `sudo apt install libdvd-pkg && sudo dpkg-reconfigure libdvd-pkg`. Bought Blu-rays (AACS) cannot be played.
 
 ---
 
@@ -360,6 +370,15 @@ alternative: Scale 100% plus Settings ▸ Accessibility ▸ Seeing ▸ Text Size
 - The screensaver's mpv has crashed after many hours of looping, with a kernel "GPU activity takes
   longer than time interval" message alongside. The service restarts it (at most 3 times per 10 min).
   Cause not found.
+- KDE image (Plaid Pi Plus 6.5): KDE's own screen-off is on. After a while without input the monitor
+  goes dark, and moving the mouse brings the picture back. Tested once at 4K@120 on the 5 Plus
+  (2026-11-16, screen off for 87 s): the picture was back in about 5 seconds by eye; the HDMI link
+  itself was up again in 0.33 s.
+- KDE image: on our monitor (the only one tried), with other devices plugged into it, the screen lit
+  up again by itself about 3 seconds after it went dark, twice. The monitor dropped its connection to
+  the board a second or two after the picture stopped, and KDE switched the returning monitor back on.
+  With the board as the only device on the monitor, the screen stayed dark until the mouse moved
+  (tried once).
 
 ---
 
@@ -506,12 +525,88 @@ upstream at github.com/narkagni/dhruva; tell us too.
 
 ---
 
+### DSK-2: The login-screen wordmark changes back to Armbian's after an update (6.0; fixed in 6.5)
+
+**Status:** fixed in 6.5; one-time fix for 6.0 below · **Severity:** cosmetic · **Affects:** seen on a 6.5 test image; 6.0 and earlier set the same links the same way, so they are expected to be affected by the same `base-files` update
+
+Plaid Pi points the greeter's wordmark links (`/usr/share/pixmaps/ubuntu-logo-text*`) at its own wordmark. Armbian's
+`base-files` package owns those links and re-creates them whenever it is upgraded (the November 2026 update did, on a 6.5
+test image), so the login screen shows Armbian's wordmark again. Nothing else changes. 6.5 diverts the links, so an upgrade
+leaves Plaid Pi's alone. **On 6.0**, once, in a terminal:
+
+```
+for f in ubuntu-logo-text.png ubuntu-logo-text.svg ubuntu-logo-text-dark.png ubuntu-logo-text-dark.svg ubuntu-logo.svg; do
+  sudo dpkg-divert --quiet --add --rename --divert /usr/share/pixmaps/$f.armbian /usr/share/pixmaps/$f
+done
+for v in "" -dark; do for e in png svg; do sudo ln -sfn plaid-pi-logo-text$v.$e /usr/share/pixmaps/ubuntu-logo-text$v.$e; done; done
+sudo ln -sfn pi-desktop.svg /usr/share/pixmaps/ubuntu-logo.svg
+```
+
+---
+
+### HW-2: Orange Pi 5 Plus — the board of the 6.5 image; what was not tested
+
+**Status:** supported from 6.5 (its own image, tested on one board) · **Severity:** informational
+
+The 6.5 image is built for the Orange Pi 5 Plus (RK3588, two 2.5 GbE ports, HDMI 2.1 out, HDMI in, two M.2 slots) and was
+tested on one: 150 of 150 first-boot checks, 4K at 120 Hz on a 32-inch HDMI 2.1 monitor, hardware video in mpv (measured)
+and the browsers (by eye), Wi-Fi and Bluetooth audio on an Intel AX210 card in the M.2 E-key slot. Not tested, because the board here
+does not have it:
+
+- **eMMC.** The 5 Plus takes an eMMC module; the test board boots from microSD. [EMMC-INSTALL.md](EMMC-INSTALL.md) and the
+  `flash-emmc.sh` helper were written for the 5B's onboard eMMC and have not been run on a 5 Plus.
+- **The Broadcom AP6275P Wi-Fi/Bluetooth module** (Orange Pi's optional card for this slot). The 6.5 recipe restores the
+  configuration-file link Armbian's November firmware package broke, and the image file carries the fix, but no 5 Plus with
+  that module has booted it. The 5B's helpers for that module are in the image and stand down when the module is absent.
+- **NVMe in the M.2 M-key slot** (empty here; the kernel logs the empty slot as a failed PCIe link, which is harmless).
+- **HDMI input, the second HDMI output and the USB-C DisplayPort output.** The single HDMI output used here is the one
+  next to the power jack.
+- **Other Wi-Fi cards in the M.2 E-key slot.** Two cannot work with this image, judging by the image and the kernel source
+  (no such card was tried): **MediaTek MT7922** (AMD RZ616) cards, because the image's firmware package has no MT7922
+  firmware (only the MT7961 files that MT7921 cards use), and **Intel BE200**, because this 6.1 kernel's Intel Wi-Fi driver
+  predates it. Intel AX200 and AX210 have their Wi-Fi and Bluetooth firmware in the image; the AX210 is the card tested.
+
+The Orange Pi 5B and the original 5 keep the 6.0 image; a 6.5 image for them follows once it has been through the same tests.
+
+---
+
+### NET-2: Wi-Fi is off after the first login on a wired board; a wrong WPA3 password keeps retrying (6.5)
+
+**Status:** by design (the first); NetworkManager's behaviour as seen on the board (the second) · **Severity:** low
+
+- **Wi-Fi off.** When Ethernet is connected and no Wi-Fi network was set up during the first login, Plaid Pi switches the
+  Wi-Fi radio off and says so on the console: on the 5B a radio that searches without a network made Bluetooth audio
+  stutter. To use Wi-Fi, click the network icon in the panel, switch Wi-Fi on and pick the network.
+- **A mistyped password on a WPA3 network.** On the 5 Plus (6.5 test image), KDE saved the home network, which offers WPA2
+  and WPA3, as WPA3 (SAE). With a mistyped password the router rejected each attempt, NetworkManager logged that the saved
+  secrets were still there and kept retrying them instead of asking again. Fix the password in System Settings > Wi-Fi & Internet >
+  the network > Wi-Fi Security, or remove the network there and join it again.
+
+---
+
+### USB-2: A Logitech Unifying receiver in the stacked USB 2.0 ports loses the mouse
+
+**Status:** observed, cause not pinned down · **Severity:** use another port · **Affects:** the Orange Pi 5 Plus test board (6.5);
+the maintainer saw the same with the same receiver on an Orange Pi 5B
+
+In the 5 Plus's two stacked USB 2.0 ports, the receiver's keyboard kept working while its mouse did nothing (and, once, Enter
+presses were lost); in either USB 3.0 port both work. Measured on 2026-11-15 with the receiver in a USB 2.0 port: the host
+controller delivered every report the receiver sent (173 keyboard reports in a minute, plus the receiver's idle reports on the
+mouse's interface), but the receiver sent no mouse reports at all while the mouse was moved — with the board's Wi-Fi on and
+with it switched off; in the other USB 2.0 port of the pair the mouse moved for about a second and stopped. So the USB side
+is fine; the receiver hears the mouse only intermittently, or not at all, at that spot. The stacked ports sit next
+to the M.2 Wi-Fi/Bluetooth card's antenna leads and the two Ethernet transceivers. Bluetooth audio was streaming during the test.
+Use a USB 3.0 port for the receiver (the 5 Plus has two; the 5B has one, plus USB-C), or a short USB extension cable from the
+USB 2.0 port. A wired mouse in the USB 2.0 ports was not tried.
+
+---
+
 ### HW-1: Orange Pi 5 (the original, not the B) — supported, runs the 5B image; untested by us
 
 **Status:** supported through issues, pull requests to the recipe and Discussions; not tested here · **Severity:** informational
 
-The image is built for the Orange Pi 5B. Readers reported (CNX Software comments, 2026) that the 2.0.x image boots on
-the original Orange Pi 5; nothing from 4.0 on (4.0, 5.0, 5.5) has been reported yet, and since 4.0 the bootloader differs
+The 6.0 image is built for the Orange Pi 5B. Readers reported (CNX Software comments, 2026) that the 2.0.x image boots on
+the original Orange Pi 5; nothing from 4.0 on (4.0–6.0) has been reported yet, and since 4.0 the bootloader differs
 (Armbian's vendor U-Boot built for the 5B). That it should work fits: same SoC, and the 5B's device tree is the 5's plus the eMMC and the Wi-Fi/Bluetooth
 module, minus the SPI flash, so display, video, audio, USB and the 5's M.2 NVMe slot are set up identically.
 Supported means: nothing here is tested on a 5; reports from owners in [issues](../../issues), pull requests to the
@@ -535,6 +630,31 @@ Supported means: nothing here is tested on a 5; reports from owners in [issues](
 We do not own a 5; if something is wrong there, report it and it will be looked at.
 
 ---
+
+## Fixed in 6.5
+
+- **The Wi-Fi/Bluetooth configuration link for the AP6275P.** Armbian's November firmware package ships the lowercase
+  `nvram_ap6275p.txt` the driver loads as a 17-byte text file instead of a link to the real file. The 6.5 recipe diverts the
+  text file and restores the link. **On a 6.0 board** the installed firmware package is older and unaffected; an update of
+  `armbian-firmware` is held, so nothing to do.
+- **DVD and Blu-ray folder copies** (VIDEO_TS, BDMV) play from Dolphin's right-click menu, a double-click on VIDEO_TS.IFO or
+  Cinemosk, with the deinterlacer on; mpv 0.42 adds ISO images and the disc menus. **On 6.0**, mpv 0.41 opens the folder too
+  (`mpv /path/to/folder`), but without the deinterlacer: add `--deinterlace=yes`.
+- **The login-screen wordmark after a `base-files` update** (DSK-2). The console login banner (`/etc/issue`) is now put
+  back after such an update too.
+- **Two Wi-Fi interfaces for one card.** Rockchip's kernel added a second, unusable interface (`p2p0`) to every Wi-Fi card
+  whose driver uses mac80211 and supports P2P; on the 5 Plus with an Intel AX210 both got the same name, and a saved
+  network stopped reconnecting when the name moved. Kernel patch 0028 removes it. **On 6.0** the 5B's onboard Broadcom
+  module is not affected (its driver does not use mac80211); a USB Wi-Fi adapter that uses mac80211 may show the extra
+  interface (not tested).
+- **Panel icons for VSCodium and Audacity** pointed at the apps' old menu-entry names (VSCodium 1.143 installs
+  `com.visualstudio.CodeOSS.desktop`, XtraDeb's Audacity 4 is `org.audacityteam.Audacity.desktop`). **On 6.0** the dock
+  still uses the old names (`codium.desktop`, `audacity.desktop`); neither was tried on a 6.0 board. 6.0 shipped
+  Audacity 3.7.8 and updates bring XtraDeb's Audacity 4. If the dock's VSCodium or Audacity icon disappears or does
+  nothing (after installing VSCodium, or after an update), add the app to the dock again from the app grid.
+- **KDE's About this System** named the system "Plaid Pi 26.04"; it now names the edition and version.
+- **Frame pacing on KDE** (the PulseAudio output clock and the compositor's internal vsync): `ao=pipewire,alsa` and the
+  `[pidesktop-kde]` profile in `/etc/mpv/mpv.conf`. The GNOME image is not affected the same way (no KDE profile applies).
 
 ## Fixed in 6.0
 

@@ -1,5 +1,9 @@
 # Installing to eMMC on the Orange Pi 5B — and cleaning it first
 
+> **Orange Pi 5 Plus (Plaid Pi Plus 6.5):** this guide and `flash-emmc.sh` were written for the 5B's onboard eMMC and have not
+> been run on a 5 Plus; the 6.5 test board boots from microSD and its eMMC socket was empty. The steps should transfer (same
+> boot ROM order, same `mmcblk` naming rules), but nobody has checked. If you try, report back in an issue.
+
 The 5B's onboard eMMC is the best reason to own the board: faster and more reliable than any microSD.
 Most "I installed it and the board misbehaves" reports trace back to **one mistake**, and it's easy to make.
 

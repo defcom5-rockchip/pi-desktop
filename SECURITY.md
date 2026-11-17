@@ -20,12 +20,15 @@ embargo process beyond what GitHub's advisory workflow provides.
 
 **In scope** — what Plaid Pi adds or changes:
 
-- the kernel: Armbian's Rockchip vendor tree merged with upstream stable 6.1.189, Plaid Pi's patches and its
-  configuration changes;
+- the kernel: Armbian's Rockchip vendor tree merged with upstream stable 6.1.191 (6.5) or 6.1.189 (6.0), Plaid Pi's
+  patches and its configuration changes;
 - the recipe and overlay: services, the first-click installers (key pinning, repository files, the polkit
   actions), polkit rules, udev rules, sshd and apt configuration, the os-release keeper;
 - the rebuilt packages: gnome-control-center `+pd3`, Rhythmbox 3.5.1, PipeWire/WirePlumber, MPP, rockchip-vaapi,
-  librga, the libmali-hook shim, mpv `+pd1` and gst-plugins-good `+pd1`;
+  librga, the libmali-hook shim, mpv (`0.42.0-1~pd4` in 6.5 with libplacebo `~pd2` and libdvdread `~pd1`; `+pd3` in 6.0),
+  GStreamer 1.28.9 `~pd1` (6.5) and gst-plugins-good `+pd1` (6.0);
+- Cinemosk (6.5): the picture-settings window, its mpv script (it runs inside mpv with the user's rights) and the disc
+  player `cinemosk-play`, plus the Dolphin service menus and the KDE look-and-feel package;
 - Killswitch (5.0), which detaches a stale network mount with one `umount -f -l` through pkexec and never offers
   the system's own filesystems or your home; the Plaid Panel top-bar extension; the Dhruva dock as configured by
   Plaid Pi (the dock's own code is upstream's apart from one small Plaid Pi change, report its bugs there);
@@ -40,9 +43,9 @@ embargo process beyond what GitHub's advisory workflow provides.
 components, and in Google Chrome, Firefox, Thunderbird, LibreOffice, GIMP, Inkscape and VSCodium (upstream
 builds installed on first click). If Plaid Pi's configuration is what exposes an upstream bug, tell us too.
 
-## Security-relevant defaults (5.0)
+## Security-relevant defaults (5.0; 6.5 where noted)
 
-- **Kernel:** Linux 6.1.189 (upstream stable, 3 October 2026) merged into Armbian's Rockchip vendor tree, with
+- **Kernel:** Linux 6.1.191 in 6.5 and 6.1.189 in 6.0 (upstream stable) merged into Armbian's Rockchip vendor tree, with
   Plaid Pi's patches. It adds Ubuntu's usual hardening: Yama ptrace restrictions, hardened usercopy, slab freelist
   hardening and randomisation, and zeroing memory on allocation. User namespaces stay on, because GNOME's image
   sandbox needs them. The kernel packages are held: kernel fixes arrive only with a new Plaid Pi image, which
@@ -67,10 +70,11 @@ builds installed on first click). If Plaid Pi's configuration is what exposes an
   system's filesystems or your home. Each unmount of a network or local mount asks for the administrator password
   (the standard pkexec prompt for `umount`); GVfs shares unmount through gio without a password.
 - **Held packages** do not update until a new Plaid Pi release: the kernel, device tree, boot loader, BSP and
-  firmware; PipeWire and WirePlumber; the Mali user-space driver; the video stack (MPP, rockchip-vaapi, librga);
-  mpv; GNOME Settings (gnome-control-center); Rhythmbox. `apt-mark showhold` lists them.
-- **gst-plugins-good** is rebuilt (`+pd1`, a FLAC seeking fix) but not held: Ubuntu's next security update of it
-  replaces Plaid Pi's build, which keeps you on Ubuntu's security fixes and drops the FLAC fix until Ubuntu ships it.
+  firmware; PipeWire and WirePlumber; the video stack (MPP, rockchip-vaapi, librga); mpv (and libmpv2 in 6.5); Rhythmbox;
+  on the GNOME image also the Mali user-space driver and GNOME Settings (gnome-control-center). `apt-mark showhold` lists them.
+- **GStreamer** is rebuilt (6.5: the 1.28.9 `~pd1` packages; 6.0: gst-plugins-good `+pd1`, a FLAC seeking fix) but not held:
+  an Ubuntu security update of the same or a newer upstream version replaces Plaid Pi's build, which keeps you on Ubuntu's
+  security fixes (and, on 6.0, drops the FLAC fix until Ubuntu ships it).
 - **SSH** is on and listening from the first boot. Root may log in with a key only; your own account can log in
   with its password. Choose a strong password at the setup wizard, or set `PasswordAuthentication no` in
   `/etc/ssh/sshd_config.d/` if you don't need it.

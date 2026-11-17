@@ -1,5 +1,106 @@
 # Changelog
 
+## 6.5 — 2026-11-17
+
+The Orange Pi 5 Plus edition, **Plaid Pi Plus 6.5**. KDE Plasma 6.6 on Mesa's open Panthor GPU driver, Ubuntu 26.04
+packages, kernel `6.1.191-vendor-rk35xx` (Armbian's vendor tree merged with upstream stable 6.1.191, tag `pi-desktop-6.5`).
+One image, `Plaid-Pi-Plus-6.5-orangepi5-plus.img.zst`, for the Orange Pi 5 Plus. The Orange Pi 5B and 5 stay on 6.0 (GNOME) until their
+6.5 image has been through the same tests. Checked on an Orange Pi 5 Plus: 150 of 150 first-boot checks on the board
+ (151 of 151 after Pro Updates, the first-click apps and a reboot), and 115 of 115 checks of the image file.
+
+### Boards
+- **Orange Pi 5 Plus** (RK3588, two 2.5 GbE ports, HDMI 2.1): the board this release is built for and tested on. 4K at
+  120 Hz over HDMI works (kernel patch 0020 gives its display controller the clock tree the 5B got in 4.0, patch 0005). The test board's
+  M.2 E-key slot holds an Intel AX210 (Wi-Fi 6E and Bluetooth); the Broadcom module the 5B has onboard was not tested on
+  a 5 Plus. The test board boots from microSD; installing to the 5 Plus's eMMC socket is untested (KNOWN-ISSUES HW-2).
+
+### Fixed
+- **Wi-Fi/Bluetooth configuration file for the AP6275P.** Armbian's November firmware package ships the lowercase
+  `nvram_ap6275p.txt` the driver loads as a 17-byte text file instead of a link to the real file; the driver would read
+  that text as its configuration. The recipe restores the link. Checked in the image file; the 5 Plus test board has no
+  AP6275P, so the on-air proof is owed to the next 5B image.
+- **Login-screen wordmark lost after an update.** Armbian's `base-files` package owns the `ubuntu-logo-text*` links the
+  greeter shows and re-creates them on every upgrade; a Pro Updates run on a 6.5 test image put Armbian's wordmark back.
+  The links are now diverted (`dpkg-divert`), so an upgrade leaves ours alone. 6.0 has the same exposure: KNOWN-ISSUES
+  DSK-2 has the one-time fix.
+- **Kernel 6.1.191.** The upstream stable fixes since 6.1.189, among them the ext4 e4b bitmap fix (CVE-2026-45942), whose
+  6.1.y backport tests for an error pointer where 6.1 still returns NULL: on an unpatched 6.1.191 any allocation after the
+  buddy bitmap left the page cache was a kernel NULL dereference (patch 0027; an allocation test under `drop_caches` passed
+  on the board, output not kept). An upstream Bluetooth MGMT use-after-free fix and its two follow-ups (0023–0025), and the vendor-driver
+  adaptations the merge needed: bcmdhd listed two cipher suites twice, which 6.1.191 rejects, so the 5B's Wi-Fi driver could
+  not register and the board had no Wi-Fi (0021; sent to Armbian as linux-rockchip #620); the wired driver's statistics
+  reset (0022). The ext4 and stmmac fixes are also queued upstream for 6.1.193. Two inert hooks for compositor HDR
+  experiments (0026: the standard "max bpc" property and a vop2 `hdr_passthrough` module parameter, both off by default).
+- **One Wi-Fi interface per card.** Rockchip's kernel gave every Wi-Fi card whose driver uses mac80211 and supports P2P a
+  second, unusable interface (`p2p0`). On the 5 Plus with an Intel AX210 both got the same name from udev, the one in use
+  changed from boot to boot, and a network saved from KDE's settings stopped reconnecting when the name changed. Patch 0028
+  reverts Rockchip's change (sent to Armbian as linux-rockchip #621): on the test board, four boots with one interface each
+  and the saved network reconnecting after every reboot; a hotspot still works on that interface.
+- **The edition's name everywhere.** KDE's About this System (and `kinfo`) said "Plaid Pi 26.04"; it now says "Plaid Pi
+  Plus 6.5", like the login banner, the terminal greeting and the How-To. The console login banner (`/etc/issue`) is put
+  back after Armbian's `base-files` upgrades rewrite it. The image's system partition is named `plaid_root` (Armbian's
+  images call it `armbi_root`); the board finds it by its UUID, not by the name.
+- **Panel icons for VSCodium and Audacity.** VSCodium 1.143 and XtraDeb's Audacity 4 renamed their menu entries
+  (`com.visualstudio.CodeOSS.desktop`, `org.audacityteam.Audacity.desktop`), so the panel's icons for them pointed at
+  names that no longer exist: Audacity's did nothing, and VSCodium's stopped working once VSCodium was installed. The
+  panel's launcher list, the recipe's GNOME dock list (the 6.0 image keeps the old one) and VSCodium's first-click
+  placeholder use the new names, and our release checks now verify that every pinned launcher has a menu entry.
+- **DVD and Blu-ray folder copies play from the desktop.** mpv opens a VIDEO_TS or BDMV folder in place (0.42 adds ISO images
+  and the disc menus): "Play DVD or Blu-ray" in Dolphin's right-click menu, a double-click on VIDEO_TS.IFO, or the button in
+  Cinemosk start the longest title, and mpv's deinterlacer is switched on for discs opened this way (the `[protocol.dvd]`
+  profile in Plaid Pi's mpv.conf only covers `dvd://` URLs). In a headless probe from the build PC (mpv 0.41), 53 of the 55
+  DVD folders on the maintainer's NAS opened as discs; the two that did not are incomplete copies. Streets of Fire was watched
+  on the 5 Plus. Plex does not support such folders (its documentation), and Jellyfin 12.4 glues the wrong VOB files together
+  (from its source, not a live server).
+- **The frame-pacing findings from the 5 Plus tests are in the defaults.** mpv's PulseAudio output clock dropped 11–19 % of
+  4K60 frames on KDE: `ao=pipewire,alsa`. On KDE, `wayland-internal-vsync=no`, `dscale=bilinear` and
+  `correct-downscaling=no`: a 4K60 file on a 1080p60 output went from 582 dropped frames in 60 s with 6.0's settings to 0.
+
+### Added
+- **Cinemosk**, a picture-settings window for films (in the Application Launcher and the panel). It sets how films smaller
+  than the screen are enlarged — Smooth, Balanced or Sharp, with the GPU cost of each measured on this board shown next to
+  the choice — and the DVD picture switches: banding clean-up, filling the screen for letterboxed 4:3 discs (after 45 s of a
+  stable picture; lifted while DVD subtitles are on), and even motion for 24 fps films on 120 Hz screens (any multiple of
+  23.976 Hz is handled; measured at 120 Hz). In mpv
+  Alt+C overrides the choice for the film's folder, Alt+M shows the meter, Alt+F toggles the fill. Films start on Balanced:
+  on the 5 Plus at 4K it is sharper than Smooth for the same GPU load (21 %); Sharp costs 28 %.
+- **mpv 0.42** with libplacebo 7.387 and libdvdread 7.1.1, rebuilt from Ubuntu's and Debian's packaging with the Mali zero-copy patches,
+  DVD-Audio enabled and the native PipeWire output; **GStreamer 1.28.9** (the FLAC seek fix 6.0 patched in is upstream, the
+  decodebin3 crash fix, two security follow-ups Ubuntu 26.04 lacks). The AMR speech codecs are not built in GStreamer 1.28's
+  "good" plugins (Ubuntu's choice; 6.0's rebuild still had them); AMR still decodes through gst-libav.
+- **4K at 120 Hz on the 5 Plus** (`rockchipdrm.allow_frl=1`, as on the 5B since 4.0); the 5 Plus test image had kept it off.
+- **KDE edition:** Plasma 6.6.6 with the Plaid look (Breeze Dark, the Plaid orange accent, the Plaid wallpaper on the desktop
+  and the login screen), Dolphin with the Network Drive and disc menus, Chromium as a first-click install like the other
+  apps, Discover not installed (Pro Updates and the first-click installers do that job), Firefox on the Mesa path (no Mali
+  library needed).
+
+- **Discs in a drive.** Cinemosk's "Play the disc in the drive" (shown while an optical drive is connected) plays a DVD
+  through the drive, starting in the disc's own menu (mpv 0.42: arrows, Enter or the mouse choose; Ctrl+M goes back
+  to the menu). A bought Norah Jones DVD played from a USB Blu-ray drive, menu included, on the 5 Plus, with the library
+  below installed from Cinemosk's "Disc support" button.
+  A data disc with folder copies on it is searched like any folder; an audio CD or a blank disc gets a message instead.
+  Bought DVDs are encrypted and Plaid Pi cannot include the library that reads them: the first time, Cinemosk offers to
+  build it on the computer (Ubuntu's libdvd-pkg downloads the source and compiles it), and Cinemosk's "Disc support" section
+  has the same install, plus Java 21 and the Blu-ray menu module for Blu-ray menus written in Java. Bought Blu-rays stay
+  encrypted. On the 5 Plus both ways were tried, each once on a fresh card: the install took 1 min 50 s from the
+  "Disc support" button and 51 s from the first-time offer (it includes downloads, so it varies); both times the password
+  prompt came up in front and the DVD then played in its menu. The Java install took under a minute.
+  Blu-ray discs go through the same button (the longest title, or the menu when Java is installed); no Blu-ray disc was
+  tested.
+
+### Known
+- **SD colour mapping was the hidden cost at 4K.** mpv's default perceptual gamut mapping for SD (BT.601) sources cost about
+  850 dropped frames a minute on a 60 fps DVD-resolution video enlarged to 4K on the 5 Plus, at 60 Hz and at 120 Hz alike;
+  Cinemosk's default SD colour setting ("Fast", gamut clip) brings the same file to 9 a minute at 4K@60 and 2 at 4K@120 on
+  Sharp. Choosing "Accurate" SD colour brings the cost back; the meter (Alt+M) shows it.
+- **Orange Pi 5 Plus notes** (HW-2): eMMC install untested; the Broadcom Wi-Fi/Bluetooth module untested on this board;
+  MediaTek MT7922 cards have no firmware in the image, and this kernel's Intel Wi-Fi driver predates the BE200 (both from
+  the image and the source; no such card was tried).
+- **Wi-Fi is off after the first login on a wired board** (NET-2): when Ethernet is connected and no Wi-Fi network was set
+  up during the first login, Plaid Pi switches the Wi-Fi radio off (a searching radio makes Bluetooth audio stutter on the
+  5B). The network icon turns it back on. A mistyped password on a WPA3 network keeps retrying instead of asking again.
+- **6.0 (GNOME) loses its login-screen wordmark after a `base-files` update** (DSK-2): cosmetic, one-time fix in KNOWN-ISSUES.
+
 ## 6.0 — 2026-10-26
 
 Same base as 5.5 (Ubuntu 26.04, GNOME 50, kernel `6.1.189-vendor-rk35xx`, tag `pi-desktop-5.0`).

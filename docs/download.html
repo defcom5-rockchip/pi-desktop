@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Plaid Pi — download and install</title>
-<meta name="description" content="Download Plaid Pi 6.0 for the Orange Pi 5 and 5B, verify the checksum, write it to a microSD card or eMMC, and what the first boot does.">
+<meta name="description" content="Download Plaid Pi Plus 6.5 for the Orange Pi 5 Plus or Plaid Pi 6.0 for the Orange Pi 5 and 5B, verify the checksum, write it to a microSD card or eMMC, and what the first boot does.">
 <link rel="stylesheet" href="style.css">
 <link rel="icon" href="img/pi-desktop.svg" type="image/svg+xml">
 </head>
@@ -26,23 +26,24 @@
 <main>
   <div class="wrap">
     <h1>Download and install</h1>
-    <p class="lede">Plaid Pi 6.0 for the Orange Pi 5B and the Orange Pi 5 (Plaid Pi is the new name of Pi-Desktop). One compressed image, <code>Plaid-Pi-6.0-orangepi5b.img.zst</code>, for both boards, and one checksum file; 1.39 GiB (1,496,576,700 bytes) to download.</p>
+    <p class="lede">Two images (Plaid Pi is the new name of Pi-Desktop). <strong>Plaid Pi Plus 6.5</strong> for the <strong>Orange Pi 5 Plus</strong>: <code>Plaid-Pi-Plus-6.5-orangepi5-plus.img.zst</code>, KDE Plasma. <strong>Plaid Pi 6.0</strong> for the <strong>Orange Pi 5B</strong> and the <strong>Orange Pi 5</strong>: <code>Plaid-Pi-6.0-orangepi5b.img.zst</code>, GNOME. Each with one checksum file next to it. Pick the one for your board; the rest of this page applies to both.</p>
 
-    <p><a class="btn" href="https://github.com/defcom5-rockchip/pi-desktop/releases/tag/v6.0.0">Plaid Pi 6.0 on GitHub</a></p>
+    <p><a class="btn" href="https://github.com/defcom5-rockchip/pi-desktop/releases/tag/v6.5.0">Plaid Pi Plus 6.5 (Orange Pi 5 Plus) on GitHub</a> <a class="btn" href="https://github.com/defcom5-rockchip/pi-desktop/releases/tag/v6.0.0">Plaid Pi 6.0 (Orange Pi 5B and 5) on GitHub</a></p>
 
     <h2>What you need</h2>
     <ul>
-      <li>An Orange Pi 5B, or the original Orange Pi 5: both use this image. The 5B is the board it is built for and tested on; the 5 is supported through <a href="https://github.com/defcom5-rockchip/pi-desktop/issues">issues</a>, pull requests to the <a href="https://github.com/defcom5-rockchip/pi-desktop-recipe">recipe</a> and <a href="https://github.com/defcom5-rockchip/pi-desktop/discussions">Discussions</a> because we have none to test on (it has no onboard Wi-Fi or Bluetooth and no eMMC — see <a href="https://github.com/defcom5-rockchip/pi-desktop/blob/main/KNOWN-ISSUES.md#hw-1-orange-pi-5-the-original-not-the-b--supported-runs-the-5b-image-untested-by-us">KNOWN-ISSUES HW-1</a>). The Orange Pi 5 Plus is planned for a later release; other RK3588 boards are not supported by this image.</li>
-      <li>A microSD card of 16 GB or more (the image is about 6.50 GiB, 7.0 GB, uncompressed and grows to fill the card on first boot), or the board's eMMC.</li>
+      <li>An Orange Pi 5 Plus (the 6.5 image), an Orange Pi 5B or the original Orange Pi 5 (both use the 6.0 image). The 5 Plus and the 5B are the boards the images are built for and tested on; the 5 is supported through <a href="https://github.com/defcom5-rockchip/pi-desktop/issues">issues</a> and the recipe (<a href="https://github.com/defcom5-rockchip/pi-desktop/blob/main/KNOWN-ISSUES.md#hw-1-orange-pi-5-the-original-not-the-b--supported-runs-the-5b-image-untested-by-us">HW-1</a>); what was not tested on the 5 Plus is in <a href="https://github.com/defcom5-rockchip/pi-desktop/blob/main/KNOWN-ISSUES.md#hw-2-orange-pi-5-plus--the-board-of-the-65-image-what-was-not-tested">HW-2</a>.</li>
+      <li>A microSD card of 16 GB or more (the 6.5 image is about 7.14 GiB uncompressed, the 6.0 image 6.50 GiB; both grow to fill the card on first boot), or the 5B's eMMC.</li>
       <li>An HDMI monitor, keyboard and mouse for the first boot. 120 Hz needs an HDMI 2.1 monitor and cable; 4K at 60 Hz works on any 4K HDMI monitor.</li>
       <li>A power supply rated for the board. A marginal phone charger browns out under load and looks exactly like a software crash.</li>
     </ul>
 
     <h2>1. Verify the checksum</h2>
     <p>Each release ships the image and a <code>.sha256</code> file next to it. On Linux or macOS, in the folder you downloaded to:</p>
-<pre><code>sha256sum -c Plaid-Pi-6.0-orangepi5b.img.zst.sha256
-# expected output: Plaid-Pi-6.0-orangepi5b.img.zst: OK</code></pre>
-    <p>On Windows: <code>certutil -hashfile Plaid-Pi-6.0-orangepi5b.img.zst SHA256</code> and compare with the contents of the <code>.sha256</code> file. The 6.0 image's checksum is <code>a851c7108c0618765c791a7b1ec0690178bbaf13f49c7fbea95692fd25ed3f16</code>; the release page has it too.</p>
+<pre><code>sha256sum -c Plaid-Pi-Plus-6.5-orangepi5-plus.img.zst.sha256
+# expected output: Plaid-Pi-Plus-6.5-orangepi5-plus.img.zst: OK
+# (6.0: the same with Plaid-Pi-6.0-orangepi5b.img.zst.sha256)</code></pre>
+    <p>On Windows: <code>certutil -hashfile Plaid-Pi-Plus-6.5-orangepi5-plus.img.zst SHA256</code> and compare with the contents of the <code>.sha256</code> file. The 6.5 image's checksum is <code>2b73c85faa0cc0dc63372f404eda59ab2378347b04377b30f575664a501bd61f</code>; the 6.0 image's is <code>a851c7108c0618765c791a7b1ec0690178bbaf13f49c7fbea95692fd25ed3f16</code>.</p>
 
     <h2>2. Write the image</h2>
     <p>Writing the image erases the card or eMMC completely. Pick one method.</p>
@@ -60,7 +61,7 @@
     </ol>
     <h3>dd (Linux, macOS)</h3>
     <p>Find the device first (<code>lsblk</code> on Linux, <code>diskutil list</code> on macOS) and make sure it is the card, not your system disk. Replace <code>/dev/sdX</code>:</p>
-<pre><code>zstd -dc Plaid-Pi-6.0-orangepi5b.img.zst | sudo dd of=/dev/sdX bs=4M status=progress conv=fsync
+<pre><code>zstd -dc Plaid-Pi-Plus-6.5-orangepi5-plus.img.zst | sudo dd of=/dev/sdX bs=4M status=progress conv=fsync
 sync</code></pre>
 
     <h2>3. First boot</h2>
@@ -68,14 +69,15 @@ sync</code></pre>
       <li>Insert the card, connect the monitor, keyboard and mouse, power on. The first boot takes longer: it grows the filesystem to the whole card.</li>
       <li>Armbian's setup runs in a text console: it first asks for a <strong>root password</strong>, then a user name, a password, your real name and a shell. Plaid Pi then asks for a <strong>computer name</strong> (it suggests <code>&lt;user&gt;-plaidpi</code>). The time zone and locale are suggested from your public IP address (see the <a href="privacy.html">privacy page</a>) and can be changed.</li>
       <li>After the setup you get the login screen, at this and every later boot (on 4.0 the setup session logged you in once without asking).</li>
-      <li>On an HDMI 2.1 monitor, 120 Hz is in <strong>Settings ▸ Displays ▸ Refresh Rate</strong>. <em>Plaid Pi How-To.txt</em> on the desktop explains screen scaling at 120 Hz, how to get Google Chrome, and the apps that install on first click.</li>
-      <li>Firefox, LibreOffice, GIMP, Inkscape, Thunderbird, VSCodium and Google Chrome are in the app grid as placeholders; the first click downloads the real app from its own repository (you will be asked for your password).</li>
+      <li>On an HDMI 2.1 monitor, 120 Hz is in <strong>Settings ▸ Displays ▸ Refresh Rate</strong> (6.5, KDE: <strong>System Settings ▸ Display &amp; Monitor</strong>). <em>Plaid Pi How-To.txt</em> on the desktop explains screen scaling at 120 Hz, how to get Google Chrome, and the apps that install on first click.</li>
+      <li>Firefox, LibreOffice, GIMP, Inkscape, Thunderbird, VSCodium and Google Chrome are in the app grid (6.0) or the Application Launcher (6.5, where Chromium is one more) as placeholders; the first click downloads the real app from its own repository (you will be asked for your password).</li>
     </ol>
     <div class="note">
-      <strong>Wi-Fi during setup:</strong> the wizard can join a Wi-Fi network for the time-zone lookup. WPA3 and WPA2/WPA3 networks work on this image, as on 4.0; stock Armbian 26.04 refuses them (kernel patch 0006).
+      <strong>Wi-Fi during setup:</strong> the wizard can join a Wi-Fi network for the time-zone lookup. WPA3 and WPA2/WPA3 networks work on both images (the 5B's AP6275P needed kernel patch 0006, which Armbian merged on 2026-10-21; the 5 Plus test board uses an Intel AX210).
     </div>
 
     <h2>4. Installing to eMMC</h2>
+    <p><strong>Orange Pi 5B only, for now:</strong> the guide and the helper were written for the 5B's onboard eMMC and have not been run on a 5 Plus (its eMMC socket was empty on the test board).</p>
     <p>The 5B's onboard eMMC is faster and more reliable than any microSD, and it is also where most "I installed it and the board misbehaves" reports come from: on RK3588 the bootloader and the operating system can come from different places, and copying a root filesystem onto the eMMC does <em>not</em> install a bootloader. Write the <strong>whole image</strong> to the eMMC, from a running Plaid Pi on a microSD, and read <a href="https://github.com/defcom5-rockchip/pi-desktop/blob/main/EMMC-INSTALL.md">EMMC-INSTALL.md</a> first — it covers identifying the right device, wiping a factory-Android eMMC, and maskrom recovery.</p>
 
     <h2>Something wrong?</h2>
